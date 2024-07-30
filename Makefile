@@ -1,5 +1,6 @@
 
 PACKAGES := $(shell go list ./... | grep -v /vendor/)
+LDFLAGS := -ldflags "-X main.commitHash=`git rev-parse --short HEAD`"
 
 # provide database information in environment
 DB_DSN ?= postgres://$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=disable&user=$(DB_USER)&password=$(DB_PASSWORD)
@@ -17,7 +18,7 @@ test:
 	go tool cover -html=coverage-all.out
 
 build:
-	go build -o bin/go-rest-api-starter ./cmd/http
+	go build $(LDFLAGS) -o bin/go-rest-api-starter ./cmd/http
 
 run:
 	go run ./cmd/http/

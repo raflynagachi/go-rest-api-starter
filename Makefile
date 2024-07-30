@@ -1,4 +1,6 @@
 
+PACKAGES := $(shell go list ./... | grep -v /vendor/)
+
 # provide database information in environment
 DB_DSN ?= postgres://$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=disable&user=$(DB_USER)&password=$(DB_PASSWORD)
 MIGRATE := docker run -v $(shell pwd)/migrations:/migrations --network host migrate/migrate:v4.17.1 -path=/migrations/ -database "$(DB_DSN)"
@@ -8,7 +10,11 @@ mock:
 	mockery --all --dir internal/usecase/definition --output=internal/usecase/definition/mocks
 
 test:
-	go test ./... --cover --race
+	@echo "mode: atomic" > coverage-all.out
+	@$(foreach pkg,$(PACKAGES), \
+		go test -p=1 -cover -race -covermode=atomic -coverprofile=coverage.out ${pkg}; \
+		tail -n +2 coverage.out >> coverage-all.out;)
+	go tool cover -html=coverage-all.out
 
 build:
 	go build -o bin/go-rest-api-starter ./cmd/http

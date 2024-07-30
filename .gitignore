@@ -15,8 +15,21 @@
 *.out
 
 # Dependency directories (remove the comment below to include it)
-# vendor/
+vendor/
 
 # Go workspace file
 go.work
 go.work.sum
+
+# Test coverage output
+coverage*.*
+
+# Binary application
+./bin
+
+# VS Code files
+.vscode
+cmd/http/__*
+
+# Secret
+env/*.*.json

@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 
 	"github.com/jmoiron/sqlx"
@@ -11,6 +12,22 @@ import (
 var (
 	sqlxIn = sqlx.In
 )
+
+// QueryPagination creates a SQL LIMIT and OFFSET clause for pagination.
+// It validates that the page is >= 1 and the limit is > 0.
+// Returns a string representing the SQL pagination clause.
+func QueryPagination(page, limit int) (string, error) {
+	if page < 1 {
+		return "", fmt.Errorf("page number must be >= 1")
+	}
+	if limit <= 0 {
+		return "", fmt.Errorf("limit must be > 0")
+	}
+
+	offset := (page - 1) * limit
+	query := fmt.Sprintf("LIMIT %d OFFSET %d", limit, offset)
+	return query, nil
+}
 
 // BatchSelectContext executes the provided query in batches and collects the results.
 func BatchSelectContext(ctx context.Context, db *sqlx.DB, query string, ids []int64, maxBatch int, dest interface{}) error {

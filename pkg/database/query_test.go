@@ -13,6 +13,34 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestQueryPagination(t *testing.T) {
+	tests := []struct {
+		name    string
+		page    int
+		limit   int
+		want    string
+		wantErr bool
+	}{
+		{"success", 1, 10, "LIMIT 10 OFFSET 0", false},
+		{"success in next page", 2, 10, "LIMIT 10 OFFSET 10", false},
+		{"error due to invalid page", 0, 10, "", true},
+		{"error due to less than zero limit", 1, -5, "", true},
+		{"error due to zero limit", 2, 0, "", true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := QueryPagination(tt.page, tt.limit)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("QueryPagination() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if got != tt.want {
+				t.Errorf("QueryPagination() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestBatchSelectContext(t *testing.T) {
 	type User struct {
 		ID   int64  `db:"id"`

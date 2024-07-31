@@ -39,7 +39,7 @@ func TestConnectDB(t *testing.T) {
 			expectedErr: false,
 		},
 		{
-			name: "error due to connection error",
+			name: "failed due to connection error",
 			cfg: &config.Database{
 				Host:     "localhost",
 				Port:     5432,
@@ -58,9 +58,9 @@ func TestConnectDB(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			originalSqlxConnect := sqlxConnect
+			tmpSqlxConnect := sqlxConnect
 			defer func() {
-				sqlxConnect = originalSqlxConnect
+				sqlxConnect = tmpSqlxConnect
 			}()
 
 			tt.setup()

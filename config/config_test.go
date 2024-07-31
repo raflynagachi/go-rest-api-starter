@@ -45,7 +45,7 @@ func TestReadJsonConfig(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "error due to invalid JSON",
+			name: "failed due to invalid JSON",
 			setupFile: func() string {
 				file, err := fs.CreateTempFile(`{"app": {"name":"my-service", "port":1234 `, "config-*.json")
 				if err != nil {
@@ -57,7 +57,7 @@ func TestReadJsonConfig(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "error due to empty file",
+			name: "failed due to empty file",
 			setupFile: func() string {
 				file, err := fs.CreateTempFile(``, "config-*.json")
 				if err != nil {
@@ -69,7 +69,7 @@ func TestReadJsonConfig(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "error due to file does not exist",
+			name: "failed due to file does not exist",
 			setupFile: func() string {
 				return "/path/to/nonexistent/file.json"
 			},
@@ -77,7 +77,7 @@ func TestReadJsonConfig(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "error due to permission denied",
+			name: "failed due to permission denied",
 			setupFile: func() string {
 				file, err := fs.CreateTempFile(``, "config-*.json")
 				if err != nil {
@@ -149,7 +149,7 @@ func TestLoadConfig(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "error due to read JSON config",
+			name: "failed due to read JSON config",
 			env:  Production,
 			setup: func() {
 				readJsonConfig = func(path string) (*Config, error) {

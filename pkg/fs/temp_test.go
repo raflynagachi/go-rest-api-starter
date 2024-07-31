@@ -1,6 +1,7 @@
 package fs
 
 import (
+	"errors"
 	"os"
 	"testing"
 
@@ -36,7 +37,7 @@ func TestCreateTempFile(t *testing.T) {
 	tests := []struct {
 		name     string
 		args     args
-		setup    func()
+		setup    func() func()
 		wantFile bool
 		wantErr  bool
 	}{
@@ -46,46 +47,69 @@ func TestCreateTempFile(t *testing.T) {
 				content: "test content",
 				pattern: "config-*.json",
 			},
-			setup: func() {
-			},
 			wantFile: true,
 			wantErr:  false,
 		},
 		{
-			name: "error due to invalid pattern",
+			name: "failed due to invalid pattern",
 			args: args{
 				content: "test content",
 				pattern: "//invalid//",
 			},
-			setup:    func() {},
 			wantFile: false,
 			wantErr:  true,
 		},
-		// TODO: find a way to mock the os.Write and os.Close
-		// {
-		// 	name: "error due to invalid write file",
-		// 	args: args{
-		// 		content: "test content",
-		// 		pattern: "config-*.txt",
-		// 	},
-		// 	setup:    func() {},
-		// 	wantFile: false,
-		// 	wantErr:  true,
-		// },
-		// {
-		// 	name: "error due to invalid close file",
-		// 	args: args{
-		// 		content: "test content",
-		// 		pattern: "config-*.txt",
-		// 	},
-		// 	setup: func() {},
-		// 	wantFile: false,
-		// 	wantErr:  true,
-		// },
+		{
+			name: "failed due to invalid write file",
+			args: args{
+				content: "test content",
+				pattern: "config-*.txt",
+			},
+			setup: func() func() {
+				tmpFileWrite := fileWrite
+				tmpFileClose := fileClose
+
+				fileWrite = func(file *os.File, content []byte) (int, error) {
+					return 0, errors.New("some error")
+				}
+
+				return func() {
+					fileWrite = tmpFileWrite
+					fileClose = tmpFileClose
+				}
+			},
+			wantFile: false,
+			wantErr:  true,
+		},
+		{
+			name: "failed due to invalid close file",
+			args: args{
+				content: "test content",
+				pattern: "config-*.txt",
+			},
+			setup: func() func() {
+				tmpFileWrite := fileWrite
+				tmpFileClose := fileClose
+
+				fileClose = func(file *os.File) error {
+					return errors.New("some error")
+				}
+
+				return func() {
+					fileWrite = tmpFileWrite
+					fileClose = tmpFileClose
+				}
+			},
+			wantFile: false,
+			wantErr:  true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.setup()
+			if tt.setup != nil {
+				cleanup := tt.setup()
+				defer cleanup()
+			}
 
 			gotFile, err := CreateTempFile(tt.args.content, tt.args.pattern)
 			if err != nil {

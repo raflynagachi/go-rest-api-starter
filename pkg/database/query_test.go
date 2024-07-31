@@ -23,9 +23,9 @@ func TestQueryPagination(t *testing.T) {
 	}{
 		{"success", 1, 10, "LIMIT 10 OFFSET 0", false},
 		{"success in next page", 2, 10, "LIMIT 10 OFFSET 10", false},
-		{"error due to invalid page", 0, 10, "", true},
-		{"error due to less than zero limit", 1, -5, "", true},
-		{"error due to zero limit", 2, 0, "", true},
+		{"failed due to invalid page", 0, 10, "", true},
+		{"failed due to less than zero limit", 1, -5, "", true},
+		{"failed due to zero limit", 2, 0, "", true},
 	}
 
 	for _, tt := range tests {
@@ -78,7 +78,7 @@ func TestBatchSelectContext(t *testing.T) {
 			expectedErr: false,
 		},
 		{
-			name:     "error due to connection error",
+			name:     "failed due to connection error",
 			query:    "SELECT * FROM table WHERE id IN (?)",
 			ids:      []int64{1},
 			maxBatch: 1,
@@ -92,7 +92,7 @@ func TestBatchSelectContext(t *testing.T) {
 			expectedErr: true,
 		},
 		{
-			name:     "error when sqlx.In error",
+			name:     "failed due to sqlx.In error",
 			query:    "SELECT * FROM table WHERE id IN (?)",
 			ids:      []int64{1, 2, 3},
 			maxBatch: 2,
@@ -105,7 +105,7 @@ func TestBatchSelectContext(t *testing.T) {
 			expectedErr: true,
 		},
 		{
-			name:        "error due to destination is not a slice",
+			name:        "failed due to destination is not a slice",
 			query:       "SELECT * FROM table WHERE id IN (?)",
 			ids:         []int64{1},
 			maxBatch:    1,
@@ -115,7 +115,7 @@ func TestBatchSelectContext(t *testing.T) {
 			expectedErr: true,
 		},
 		{
-			name:        "error due to destination is a nil pointer",
+			name:        "failed due to destination is a nil pointer",
 			query:       "SELECT * FROM table WHERE id IN (?)",
 			ids:         []int64{1},
 			maxBatch:    1,
@@ -134,9 +134,9 @@ func TestBatchSelectContext(t *testing.T) {
 
 			sqlxDB := sqlx.NewDb(db, "sqlmock")
 
-			originalSqlxIn := sqlxIn
+			tmpSqlxIn := sqlxIn
 			defer func() {
-				sqlxIn = originalSqlxIn
+				sqlxIn = tmpSqlxIn
 			}()
 
 			tt.setup(mock)

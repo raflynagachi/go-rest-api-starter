@@ -25,9 +25,9 @@ func TestInitMockDB(t *testing.T) {
 	})
 
 	t.Run("failure in sqlmockNew", func(t *testing.T) {
-		originalSqlmockNew := sqlmockNew
+		tmpSqlmockNew := sqlmockNew
 		defer func() {
-			sqlmockNew = originalSqlmockNew
+			sqlmockNew = tmpSqlmockNew
 		}()
 
 		sqlmockNew = func() (*sql.DB, sqlmock.Sqlmock, error) {
@@ -43,33 +43,29 @@ func TestInitMockDB(t *testing.T) {
 }
 
 func TestInitBeginx(t *testing.T) {
-	mockTx := &sqlx.Tx{}
-
 	tests := []struct {
 		name    string
 		setup   func() (*sqlx.DB, func())
-		want    *sqlx.Tx
+		wantTx  bool
 		wantErr bool
 	}{
 		{
 			name: "success begin transaction",
 			setup: func() (*sqlx.DB, func()) {
-				db, _, err := sqlmock.New()
+				db, mockSql, err := sqlmock.New()
 				if err != nil {
 					t.Fatalf("sqlmock.New() error = %v", err)
 				}
 				sqlxDB := sqlx.NewDb(db, "sqlmock")
 
-				originalBeginx := beginx
-				beginx = func(_ *sqlx.DB) (*sqlx.Tx, error) {
-					return mockTx, nil
-				}
+				tmpBeginx := beginx
+				mockSql.ExpectBegin()
 
 				return sqlxDB, func() {
-					beginx = originalBeginx
+					beginx = tmpBeginx
 				}
 			},
-			want:    mockTx,
+			wantTx:  true,
 			wantErr: false,
 		},
 		{
@@ -81,16 +77,16 @@ func TestInitBeginx(t *testing.T) {
 				}
 				sqlxDB := sqlx.NewDb(db, "sqlmock")
 
-				originalBeginx := beginx
+				tmpBeginx := beginx
 				beginx = func(_ *sqlx.DB) (*sqlx.Tx, error) {
 					return nil, MockErr
 				}
 
 				return sqlxDB, func() {
-					beginx = originalBeginx
+					beginx = tmpBeginx
 				}
 			},
-			want:    nil,
+			wantTx:  false,
 			wantErr: true,
 		},
 	}
@@ -104,8 +100,8 @@ func TestInitBeginx(t *testing.T) {
 			if (err != nil) != tt.wantErr {
 				t.Errorf("InitBeginx() error = %v, wantErr %v", err, tt.wantErr)
 			}
-			if got != tt.want {
-				t.Errorf("InitBeginx() = %v, want %v", got, tt.want)
+			if (got != nil) != tt.wantTx {
+				t.Errorf("InitBeginx() tx = %v, wantTx %v", got, tt.wantTx)
 			}
 		})
 	}

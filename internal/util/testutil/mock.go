@@ -11,8 +11,6 @@ import (
 )
 
 var (
-	MockErr = errors.New("mock error")
-
 	sqlmockNew = func() (*sql.DB, sqlmock.Sqlmock, error) {
 		return sqlmock.New()
 	}

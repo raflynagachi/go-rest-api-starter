@@ -18,7 +18,21 @@ func (r *PostgresRepo) GetUser(ctx context.Context, filter req.UserFilter) ([]*m
 }
 
 func (r *PostgresRepo) CountUser(ctx context.Context, filter req.UserFilter) (int64, error) {
-	panic("need to be implemented")
+	query := `
+		SELECT COUNT(id)
+		FROM users
+	`
+
+	whereClause, args := filterUser(filter)
+	query = r.DB.Rebind(query + whereClause)
+
+	var totalData int64
+	err := r.DB.GetContext(ctx, &totalData, query, args...)
+	if err != nil {
+		return 0, errors.Wrap(err, "PostgresRepo.GetUserByID.GetContext")
+	}
+
+	return totalData, nil
 }
 
 func (r *PostgresRepo) GetUserByID(ctx context.Context, id int64) (*model.User, error) {

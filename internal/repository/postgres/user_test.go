@@ -8,11 +8,99 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/jmoiron/sqlx"
+	req "github.com/raflynagachi/go-rest-api-starter/internal/dto/web/request"
 	"github.com/raflynagachi/go-rest-api-starter/internal/model"
 	randomutil "github.com/raflynagachi/go-rest-api-starter/internal/util/random"
 	"github.com/raflynagachi/go-rest-api-starter/internal/util/testutil"
+	"github.com/raflynagachi/go-rest-api-starter/pkg/random"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestPostgresRepo_CountUser(t *testing.T) {
+	mockUser := randomutil.RandomUser()
+	mockCount := int64(1)
+
+	mockFilter := req.UserFilter{
+		Email: mockUser.Email,
+		Pagination: req.Pagination{
+			Page:  random.RandomInt(1, 10),
+			Limit: random.RandomInt(1, 10),
+		},
+	}
+
+	type fields struct {
+		DB *sqlx.DB
+	}
+	type args struct {
+		ctx    context.Context
+		filter req.UserFilter
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		patch   func()
+		want    int64
+		wantErr bool
+	}{
+		{
+			name:   "success count user with filter",
+			fields: fields{DB: sqlxDB},
+			args:   args{ctx: context.Background(), filter: mockFilter},
+			patch: func() {
+				mockSql.ExpectQuery("SELECT").
+					WithArgs(mockUser.Email).
+					WillReturnRows(
+						mockSql.NewRows([]string{"count"}).
+							AddRow(mockCount))
+			},
+			want:    mockCount,
+			wantErr: false,
+		},
+		{
+			name:   "success without filter",
+			fields: fields{DB: sqlxDB},
+			args:   args{ctx: context.Background(), filter: req.UserFilter{}},
+			patch: func() {
+				mockSql.ExpectQuery("SELECT").WithoutArgs().
+					WillReturnRows(
+						mockSql.NewRows([]string{"count"}).
+							AddRow(mockCount))
+			},
+			want:    mockCount,
+			wantErr: false,
+		},
+		{
+			name:   "failed due to connection error",
+			fields: fields{DB: sqlxDB},
+			args:   args{ctx: context.Background(), filter: req.UserFilter{}},
+			patch: func() {
+				mockSql.ExpectQuery("SELECT").WithoutArgs().
+					WillReturnError(sql.ErrConnDone)
+			},
+			want:    0,
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := &PostgresRepo{
+				DB: tt.fields.DB,
+			}
+
+			tt.patch()
+
+			got, err := r.CountUser(tt.args.ctx, tt.args.filter)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("PostgresRepo.CountUser() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("PostgresRepo.CountUser() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
 
 func TestPostgresRepo_GetUserByID(t *testing.T) {
 	mockUser := randomutil.RandomUser()

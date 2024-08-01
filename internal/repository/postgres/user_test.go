@@ -262,7 +262,7 @@ func TestPostgresRepo_InsertUser(t *testing.T) {
 			tt.setup()
 
 			var err error
-			tt.args.tx, err = testutil.InitBeginx(t, sqlxDB)
+			tt.args.tx, err = testutil.InitBeginx(sqlxDB)
 			assert.NoError(t, err)
 
 			got, err := r.InsertUser(tt.args.ctx, tt.args.tx, tt.args.user)
@@ -342,7 +342,7 @@ func TestPostgresRepo_UpdateUser(t *testing.T) {
 			tt.setup()
 
 			var err error
-			tt.args.tx, err = testutil.InitBeginx(t, sqlxDB)
+			tt.args.tx, err = testutil.InitBeginx(sqlxDB)
 			assert.NoError(t, err)
 
 			if err := r.UpdateUser(tt.args.ctx, tt.args.tx, tt.args.user); (err != nil) != tt.wantErr {

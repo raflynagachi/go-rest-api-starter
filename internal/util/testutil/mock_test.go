@@ -2,6 +2,7 @@ package testutil
 
 import (
 	"database/sql"
+	"errors"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -43,48 +44,30 @@ func TestInitMockDB(t *testing.T) {
 }
 
 func TestInitBeginx(t *testing.T) {
+	db, mockSql, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("sqlmock.New() error = %v", err)
+	}
+	sqlxDB := sqlx.NewDb(db, "sqlmock")
+
 	tests := []struct {
 		name    string
-		setup   func() (*sqlx.DB, func())
+		setup   func()
 		wantTx  bool
 		wantErr bool
 	}{
 		{
 			name: "success begin transaction",
-			setup: func() (*sqlx.DB, func()) {
-				db, mockSql, err := sqlmock.New()
-				if err != nil {
-					t.Fatalf("sqlmock.New() error = %v", err)
-				}
-				sqlxDB := sqlx.NewDb(db, "sqlmock")
-
-				tmpBeginx := beginx
+			setup: func() {
 				mockSql.ExpectBegin()
-
-				return sqlxDB, func() {
-					beginx = tmpBeginx
-				}
 			},
 			wantTx:  true,
 			wantErr: false,
 		},
 		{
 			name: "failure in beginx",
-			setup: func() (*sqlx.DB, func()) {
-				db, _, err := sqlmock.New()
-				if err != nil {
-					t.Fatalf("sqlmock.New() error = %v", err)
-				}
-				sqlxDB := sqlx.NewDb(db, "sqlmock")
-
-				tmpBeginx := beginx
-				beginx = func(_ *sqlx.DB) (*sqlx.Tx, error) {
-					return nil, MockErr
-				}
-
-				return sqlxDB, func() {
-					beginx = tmpBeginx
-				}
+			setup: func() {
+				mockSql.ExpectBegin().WillReturnError(errors.New("some error"))
 			},
 			wantTx:  false,
 			wantErr: true,
@@ -93,10 +76,9 @@ func TestInitBeginx(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			sqlxDB, cleanup := tt.setup()
-			defer cleanup()
+			tt.setup()
 
-			got, err := InitBeginx(t, sqlxDB)
+			got, err := InitBeginx(sqlxDB)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("InitBeginx() error = %v, wantErr %v", err, tt.wantErr)
 			}

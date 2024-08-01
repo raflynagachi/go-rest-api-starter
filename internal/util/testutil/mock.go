@@ -3,8 +3,6 @@ package testutil
 import (
 	"database/sql"
 
-	"testing"
-
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
@@ -13,9 +11,6 @@ import (
 var (
 	sqlmockNew = func() (*sql.DB, sqlmock.Sqlmock, error) {
 		return sqlmock.New()
-	}
-	beginx = func(sqlxDB *sqlx.DB) (*sqlx.Tx, error) {
-		return sqlxDB.Beginx()
 	}
 )
 
@@ -30,8 +25,8 @@ func InitMockDB() (*sql.DB, *sqlx.DB, sqlmock.Sqlmock, error) {
 }
 
 // InitBeginx create mock transaction
-func InitBeginx(t *testing.T, sqlxDB *sqlx.DB) (*sqlx.Tx, error) {
-	tx, err := beginx(sqlxDB)
+func InitBeginx(sqlxDB *sqlx.DB) (*sqlx.Tx, error) {
+	tx, err := sqlxDB.Beginx()
 	if err != nil {
 		return nil, errors.Wrap(err, "Beginx")
 	}

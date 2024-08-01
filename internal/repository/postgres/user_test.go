@@ -39,7 +39,7 @@ func TestPostgresRepo_GetUser(t *testing.T) {
 		name    string
 		fields  fields
 		args    args
-		patch   func()
+		setup   func()
 		want    []*model.User
 		wantErr bool
 	}{
@@ -47,7 +47,7 @@ func TestPostgresRepo_GetUser(t *testing.T) {
 			name:   "success get user with filter",
 			fields: fields{DB: sqlxDB},
 			args:   args{ctx: context.Background(), filter: mockFilter},
-			patch: func() {
+			setup: func() {
 				mockSql.ExpectQuery("SELECT").
 					WithArgs(mockUser.Email).
 					WillReturnRows(
@@ -61,7 +61,7 @@ func TestPostgresRepo_GetUser(t *testing.T) {
 			name:    "failed due to invalid pagination",
 			fields:  fields{DB: sqlxDB},
 			args:    args{ctx: context.Background(), filter: req.UserFilter{}},
-			patch:   func() {},
+			setup:   func() {},
 			want:    nil,
 			wantErr: true,
 		},
@@ -71,7 +71,7 @@ func TestPostgresRepo_GetUser(t *testing.T) {
 			args: args{ctx: context.Background(), filter: req.UserFilter{
 				Pagination: mockFilter.Pagination,
 			}},
-			patch: func() {
+			setup: func() {
 				mockSql.ExpectQuery("SELECT").WithoutArgs().
 					WillReturnError(sql.ErrConnDone)
 			},
@@ -85,7 +85,7 @@ func TestPostgresRepo_GetUser(t *testing.T) {
 				DB: tt.fields.DB,
 			}
 
-			tt.patch()
+			tt.setup()
 
 			got, err := r.GetUser(tt.args.ctx, tt.args.filter)
 			if (err != nil) != tt.wantErr {
@@ -122,7 +122,7 @@ func TestPostgresRepo_CountUser(t *testing.T) {
 		name    string
 		fields  fields
 		args    args
-		patch   func()
+		setup   func()
 		want    int64
 		wantErr bool
 	}{
@@ -130,7 +130,7 @@ func TestPostgresRepo_CountUser(t *testing.T) {
 			name:   "success count user with filter",
 			fields: fields{DB: sqlxDB},
 			args:   args{ctx: context.Background(), filter: mockFilter},
-			patch: func() {
+			setup: func() {
 				mockSql.ExpectQuery("SELECT").
 					WithArgs(mockUser.Email).
 					WillReturnRows(
@@ -144,7 +144,7 @@ func TestPostgresRepo_CountUser(t *testing.T) {
 			name:   "success without filter",
 			fields: fields{DB: sqlxDB},
 			args:   args{ctx: context.Background(), filter: req.UserFilter{}},
-			patch: func() {
+			setup: func() {
 				mockSql.ExpectQuery("SELECT").WithoutArgs().
 					WillReturnRows(
 						mockSql.NewRows([]string{"count"}).
@@ -157,7 +157,7 @@ func TestPostgresRepo_CountUser(t *testing.T) {
 			name:   "failed due to connection error",
 			fields: fields{DB: sqlxDB},
 			args:   args{ctx: context.Background(), filter: req.UserFilter{}},
-			patch: func() {
+			setup: func() {
 				mockSql.ExpectQuery("SELECT").WithoutArgs().
 					WillReturnError(sql.ErrConnDone)
 			},
@@ -171,7 +171,7 @@ func TestPostgresRepo_CountUser(t *testing.T) {
 				DB: tt.fields.DB,
 			}
 
-			tt.patch()
+			tt.setup()
 
 			got, err := r.CountUser(tt.args.ctx, tt.args.filter)
 			if (err != nil) != tt.wantErr {

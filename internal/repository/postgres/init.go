@@ -4,6 +4,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	repo "github.com/raflynagachi/go-rest-api-starter/internal/repository/definition"
+	"github.com/raflynagachi/go-rest-api-starter/pkg/database"
 )
 
 type PostgresRepo struct {
@@ -15,3 +16,7 @@ func New(db *sqlx.DB) repo.SQLRepo {
 		DB: db,
 	}
 }
+
+var (
+	generatePagination = database.QueryPagination
+)

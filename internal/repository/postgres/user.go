@@ -14,7 +14,28 @@ import (
 )
 
 func (r *PostgresRepo) GetUser(ctx context.Context, filter req.UserFilter) ([]*model.User, error) {
-	panic("need to be implemented")
+	query := `
+		SELECT
+			id, email, created_at, created_by,
+			updated_at, updated_by
+		FROM users
+	`
+
+	whereClause, args := filterUser(filter)
+	pagination, err := generatePagination(filter.Page, filter.Limit)
+	if err != nil {
+		return nil, errors.Wrap(err, "PostgresRepo.GetUser.generatePagination")
+	}
+
+	query = r.DB.Rebind(query + whereClause + pagination)
+
+	users := make([]*model.User, 0)
+	err = r.DB.SelectContext(ctx, &users, query, args...)
+	if err != nil {
+		return nil, errors.Wrap(err, "PostgresRepo.GetUser.SelectContext")
+	}
+
+	return users, nil
 }
 
 func (r *PostgresRepo) CountUser(ctx context.Context, filter req.UserFilter) (int64, error) {

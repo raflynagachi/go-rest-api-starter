@@ -16,6 +16,89 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestPostgresRepo_GetUser(t *testing.T) {
+	mockUser := randomutil.RandomUser()
+	mockUsers := []*model.User{mockUser}
+
+	mockFilter := req.UserFilter{
+		Email: mockUser.Email,
+		Pagination: req.Pagination{
+			Page:  random.RandomInt(1, 10),
+			Limit: random.RandomInt(1, 10),
+		},
+	}
+
+	type fields struct {
+		DB *sqlx.DB
+	}
+	type args struct {
+		ctx    context.Context
+		filter req.UserFilter
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		patch   func()
+		want    []*model.User
+		wantErr bool
+	}{
+		{
+			name:   "success get user with filter",
+			fields: fields{DB: sqlxDB},
+			args:   args{ctx: context.Background(), filter: mockFilter},
+			patch: func() {
+				mockSql.ExpectQuery("SELECT").
+					WithArgs(mockUser.Email).
+					WillReturnRows(
+						mockSql.NewRows([]string{"id", "email", "created_at", "created_by", "updated_at", "updated_by"}).
+							AddRow(mockUser.ID, mockUser.Email, mockUser.CreatedAt, mockUser.CreatedBy, mockUser.UpdatedAt, mockUser.UpdatedBy))
+			},
+			want:    mockUsers,
+			wantErr: false,
+		},
+		{
+			name:    "failed due to invalid pagination",
+			fields:  fields{DB: sqlxDB},
+			args:    args{ctx: context.Background(), filter: req.UserFilter{}},
+			patch:   func() {},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name:   "failed due to connection error",
+			fields: fields{DB: sqlxDB},
+			args: args{ctx: context.Background(), filter: req.UserFilter{
+				Pagination: mockFilter.Pagination,
+			}},
+			patch: func() {
+				mockSql.ExpectQuery("SELECT").WithoutArgs().
+					WillReturnError(sql.ErrConnDone)
+			},
+			want:    nil,
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := &PostgresRepo{
+				DB: tt.fields.DB,
+			}
+
+			tt.patch()
+
+			got, err := r.GetUser(tt.args.ctx, tt.args.filter)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("PostgresRepo.GetUser() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("PostgresRepo.GetUser() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestPostgresRepo_CountUser(t *testing.T) {
 	mockUser := randomutil.RandomUser()
 	mockCount := int64(1)

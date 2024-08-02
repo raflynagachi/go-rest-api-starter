@@ -25,13 +25,16 @@ func init() {
 	}
 
 	// register custom validation tag
-	validate.RegisterValidation("gt_today", gtToday)
+	if err := validate.RegisterValidation("gt_today", gtToday); err != nil {
+		log.Fatalf("Error registering validation: %v", err)
+	}
+
 	if err := validate.RegisterTranslation(
 		"gt_today", trans,
 		registerTranslator("gt_today", "{0} must be a date after today"),
 		translate,
 	); err != nil {
-		panic(err.Error())
+		log.Fatalf("Error registering translation: %v", err)
 	}
 
 	// register json tag for error validations

@@ -4,12 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/raflynagachi/go-rest-api-starter/pkg/http/encoder"
 	"github.com/rs/zerolog/log"
-)
-
-var (
-	encodeJson = encoder.EncodeJson
 )
 
 type Response struct {

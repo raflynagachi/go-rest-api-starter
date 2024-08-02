@@ -7,7 +7,6 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/pkg/errors"
-	"github.com/raflynagachi/go-rest-api-starter/pkg/http/encoder"
 	appValidator "github.com/raflynagachi/go-rest-api-starter/pkg/validator"
 	"github.com/rs/zerolog/log"
 )
@@ -24,13 +23,9 @@ func (e ErrResponse) Error() string {
 	return e.Err.Error()
 }
 
-func (e ErrResponse) Cause() error {
-	return e
-}
-
 // WriteFromError writes a formatted error response
 func WriteFromError(w http.ResponseWriter, e error) {
-	errResp, lastError := FindErrResponse(e)
+	errResp, lastError := findErrResponse(e)
 	errResp.Message = lastError.Error()
 
 	if errResp.Code == http.StatusBadRequest {
@@ -53,7 +48,7 @@ func WriteFromError(w http.ResponseWriter, e error) {
 	}
 
 	w.WriteHeader(errResp.Code)
-	err := encoder.EncodeJson(w, errResp)
+	err := encodeJson(w, errResp)
 	if err != nil {
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 	}

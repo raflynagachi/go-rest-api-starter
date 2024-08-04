@@ -7,8 +7,11 @@ import (
 	"github.com/raflynagachi/go-rest-api-starter/internal/apperror"
 	req "github.com/raflynagachi/go-rest-api-starter/internal/dto/web/request"
 	resp "github.com/raflynagachi/go-rest-api-starter/internal/dto/web/response"
+	"github.com/raflynagachi/go-rest-api-starter/internal/model"
 	paginationutil "github.com/raflynagachi/go-rest-api-starter/internal/util/pagination"
 	"github.com/raflynagachi/go-rest-api-starter/pkg/http/response"
+	"github.com/raflynagachi/go-rest-api-starter/pkg/validator"
+	"github.com/rs/zerolog/log"
 )
 
 func (u *APIUsecaseImpl) GetUser(ctx context.Context, filter req.UserFilter) (*resp.ListResponse, error) {
@@ -78,10 +81,81 @@ func (u *APIUsecaseImpl) GetUserByID(ctx context.Context, id int64) (*resp.UserR
 	return res, nil
 }
 
-func (u *APIUsecaseImpl) CreateUser(ctx context.Context, request *req.CreateUpdateUserReq) error {
-	panic("need to be implemented")
+func (u *APIUsecaseImpl) CreateUser(ctx context.Context, userReq *req.CreateUpdateUserReq) error {
+	err := validator.Validate(userReq)
+	if err != nil {
+		return errors.Wrap(response.WrapErrBadRequest(err), "APIUsecase.CreateUser.Validate")
+	}
+
+	// TODO: implement JWT
+
+	user := &model.User{
+		Email: userReq.Email,
+		Created: model.Created{
+			CreatedAt: getTimeNow,
+			CreatedBy: userReq.Email, // TODO: change to email in JWT
+		},
+	}
+
+	tx, err := u.repo.TxBegin()
+	if err != nil {
+		return errors.Wrap(response.WrapErrInternalServer(err), "APIUsecase.CreateUser.TxBegin")
+	}
+	defer func() {
+		if txErr := u.repo.TxEnd(tx, err); txErr != nil {
+			txErr = errors.Wrap(txErr, "APIUsecase.CreateUser.TxEnd")
+			log.Error().Msg(txErr.Error())
+		}
+	}()
+
+	_, err = u.repo.InsertUser(ctx, tx, user)
+	if err != nil {
+		return errors.Wrap(response.WrapErrInternalServer(err), "APIUsecase.CreateUser.InsertUser")
+	}
+
+	return nil
 }
 
-func (u *APIUsecaseImpl) UpdateUser(ctx context.Context, id int64, request *req.CreateUpdateUserReq) error {
-	panic("need to be implemented")
+func (u *APIUsecaseImpl) UpdateUser(ctx context.Context, id int64, userReq *req.CreateUpdateUserReq) error {
+	err := validator.Validate(userReq)
+	if err != nil {
+		return errors.Wrap(response.WrapErrBadRequest(err), "APIUsecase.UpdateUser.Validate")
+	}
+
+	_, err = u.repo.GetUserByID(ctx, id)
+	if err != nil {
+		if errors.Is(err, apperror.ErrNotFound) {
+			return errors.Wrap(response.WrapErrNotFound(err), "APIUsecase.UpdateUser.GetUserByID")
+		}
+		return errors.Wrap(response.WrapErrInternalServer(err), "APIUsecase.UpdateUser.GetUserByID")
+	}
+
+	// TODO: implement JWT
+
+	user := &model.User{
+		ID:    id,
+		Email: userReq.Email,
+		Created: model.Created{
+			CreatedAt: getTimeNow,
+			CreatedBy: userReq.Email, // TODO: change to email in JWT
+		},
+	}
+
+	tx, err := u.repo.TxBegin()
+	if err != nil {
+		return errors.Wrap(response.WrapErrInternalServer(err), "APIUsecase.UpdateUser.TxBegin")
+	}
+	defer func() {
+		if txErr := u.repo.TxEnd(tx, err); txErr != nil {
+			txErr = errors.Wrap(txErr, "APIUsecase.UpdateUser.TxEnd")
+			log.Error().Msg(txErr.Error())
+		}
+	}()
+
+	err = u.repo.UpdateUser(ctx, tx, user)
+	if err != nil {
+		return errors.Wrap(response.WrapErrInternalServer(err), "APIUsecase.UpdateUser.UpdateUser")
+	}
+
+	return nil
 }

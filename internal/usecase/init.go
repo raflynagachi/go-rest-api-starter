@@ -1,6 +1,8 @@
 package usecase
 
 import (
+	"time"
+
 	"github.com/raflynagachi/go-rest-api-starter/config"
 	repo "github.com/raflynagachi/go-rest-api-starter/internal/repository/definition"
 	uc "github.com/raflynagachi/go-rest-api-starter/internal/usecase/definition"
@@ -17,3 +19,7 @@ func New(cfg *config.Config, sqlRepo repo.SQLRepo) uc.APIUsecase {
 		repo: sqlRepo,
 	}
 }
+
+var (
+	getTimeNow = time.Now()
+)

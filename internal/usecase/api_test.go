@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/jmoiron/sqlx"
 	"github.com/raflynagachi/go-rest-api-starter/config"
 	"github.com/raflynagachi/go-rest-api-starter/internal/apperror"
 	req "github.com/raflynagachi/go-rest-api-starter/internal/dto/web/request"
@@ -14,6 +15,7 @@ import (
 	paginationutil "github.com/raflynagachi/go-rest-api-starter/internal/util/pagination"
 	randomutil "github.com/raflynagachi/go-rest-api-starter/internal/util/random"
 	"github.com/raflynagachi/go-rest-api-starter/internal/util/testutil"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestAPIUsecaseImpl_GetUser(t *testing.T) {
@@ -240,6 +242,300 @@ func TestAPIUsecaseImpl_GetUserByID(t *testing.T) {
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("APIUsecaseImpl.GetUserByID() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestAPIUsecaseImpl_CreateUser(t *testing.T) {
+	mockUser := randomutil.RandomUser()
+
+	mockTx := &sqlx.Tx{}
+
+	type fields struct {
+		cfg  *config.Config
+		repo repo.SQLRepo
+	}
+	type args struct {
+		ctx     context.Context
+		userReq *req.CreateUpdateUserReq
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		setup   func()
+		wantErr bool
+	}{
+		{
+			name: "success create user",
+			fields: fields{
+				cfg:  mockCfg,
+				repo: mockRepo,
+			},
+			args: args{
+				ctx: context.Background(),
+				userReq: &req.CreateUpdateUserReq{
+					Email: mockUser.Email,
+				},
+			},
+			setup: func() {
+				mockRepo.On("TxBegin").Once().Return(mockTx, nil)
+				mockRepo.On("InsertUser", context.Background(), mockTx, mock.Anything).Once().Return(mockUser.ID, nil)
+				mockRepo.On("TxEnd", mockTx, nil).Once().Return(nil)
+			},
+			wantErr: false,
+		},
+		{
+			name: "failed due to validation request",
+			fields: fields{
+				cfg:  mockCfg,
+				repo: mockRepo,
+			},
+			args: args{
+				ctx:     context.Background(),
+				userReq: &req.CreateUpdateUserReq{},
+			},
+			setup:   func() {},
+			wantErr: true,
+		},
+		{
+			name: "failed due to TxBegin error",
+			fields: fields{
+				cfg:  mockCfg,
+				repo: mockRepo,
+			},
+			args: args{
+				ctx: context.Background(),
+				userReq: &req.CreateUpdateUserReq{
+					Email: mockUser.Email,
+				},
+			},
+			setup: func() {
+				mockRepo.On("TxBegin").Once().Return(nil, testutil.MockErr)
+			},
+			wantErr: true,
+		},
+		{
+			name: "failed due to InsertUser error",
+			fields: fields{
+				cfg:  mockCfg,
+				repo: mockRepo,
+			},
+			args: args{
+				ctx: context.Background(),
+				userReq: &req.CreateUpdateUserReq{
+					Email: mockUser.Email,
+				},
+			},
+			setup: func() {
+				mockRepo.On("TxBegin").Once().Return(mockTx, nil)
+				mockRepo.On("InsertUser", context.Background(), mockTx, mock.Anything).Once().Return(int64(0), testutil.MockErr)
+				mockRepo.On("TxEnd", mockTx, testutil.MockErr).Once().Return(nil)
+			},
+			wantErr: true,
+		},
+		{
+			name: "failed due to TxEnd error",
+			fields: fields{
+				cfg:  mockCfg,
+				repo: mockRepo,
+			},
+			args: args{
+				ctx: context.Background(),
+				userReq: &req.CreateUpdateUserReq{
+					Email: mockUser.Email,
+				},
+			},
+			setup: func() {
+				mockRepo.On("TxBegin").Once().Return(mockTx, nil)
+				mockRepo.On("InsertUser", context.Background(), mockTx, mock.Anything).Once().Return(mockUser.ID, nil)
+				mockRepo.On("TxEnd", mockTx, nil).Once().Return(testutil.MockErr)
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			u := &APIUsecaseImpl{
+				cfg:  tt.fields.cfg,
+				repo: tt.fields.repo,
+			}
+
+			tt.setup()
+
+			if err := u.CreateUser(tt.args.ctx, tt.args.userReq); (err != nil) != tt.wantErr {
+				t.Errorf("APIUsecaseImpl.CreateUser() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestAPIUsecaseImpl_UpdateUser(t *testing.T) {
+	mockUser := randomutil.RandomUser()
+
+	mockTx := &sqlx.Tx{}
+
+	type fields struct {
+		cfg  *config.Config
+		repo repo.SQLRepo
+	}
+	type args struct {
+		ctx     context.Context
+		id      int64
+		userReq *req.CreateUpdateUserReq
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		setup   func()
+		wantErr bool
+	}{
+		{
+			name: "success update user",
+			fields: fields{
+				cfg:  mockCfg,
+				repo: mockRepo,
+			},
+			args: args{
+				ctx: context.Background(),
+				id:  mockUser.ID,
+				userReq: &req.CreateUpdateUserReq{
+					Email: mockUser.Email,
+				},
+			},
+			setup: func() {
+				mockRepo.On("GetUserByID", context.Background(), mockUser.ID).Once().Return(mockUser, nil)
+				mockRepo.On("TxBegin").Once().Return(mockTx, nil)
+				mockRepo.On("UpdateUser", context.Background(), mockTx, mock.Anything).Once().Return(nil)
+				mockRepo.On("TxEnd", mockTx, nil).Once().Return(nil)
+			},
+			wantErr: false,
+		},
+		{
+			name: "failed due to validation request",
+			fields: fields{
+				cfg:  mockCfg,
+				repo: mockRepo,
+			},
+			args: args{
+				ctx:     context.Background(),
+				id:      mockUser.ID,
+				userReq: &req.CreateUpdateUserReq{},
+			},
+			setup:   func() {},
+			wantErr: true,
+		},
+		{
+			name: "failed due to user not found",
+			fields: fields{
+				cfg:  mockCfg,
+				repo: mockRepo,
+			},
+			args: args{
+				ctx: context.Background(),
+				id:  mockUser.ID,
+				userReq: &req.CreateUpdateUserReq{
+					Email: mockUser.Email,
+				},
+			},
+			setup: func() {
+				mockRepo.On("GetUserByID", context.Background(), mockUser.ID).Once().Return(nil, apperror.ErrNotFound)
+			},
+			wantErr: true,
+		},
+		{
+			name: "failed due to GetUserByID error",
+			fields: fields{
+				cfg:  mockCfg,
+				repo: mockRepo,
+			},
+			args: args{
+				ctx: context.Background(),
+				id:  mockUser.ID,
+				userReq: &req.CreateUpdateUserReq{
+					Email: mockUser.Email,
+				},
+			},
+			setup: func() {
+				mockRepo.On("GetUserByID", context.Background(), mockUser.ID).Once().Return(nil, testutil.MockErr)
+			},
+			wantErr: true,
+		},
+		{
+			name: "failed due to TxBegin error",
+			fields: fields{
+				cfg:  mockCfg,
+				repo: mockRepo,
+			},
+			args: args{
+				ctx: context.Background(),
+				id:  mockUser.ID,
+				userReq: &req.CreateUpdateUserReq{
+					Email: mockUser.Email,
+				},
+			},
+			setup: func() {
+				mockRepo.On("GetUserByID", context.Background(), mockUser.ID).Once().Return(mockUser, nil)
+				mockRepo.On("TxBegin").Once().Return(nil, testutil.MockErr)
+			},
+			wantErr: true,
+		},
+		{
+			name: "failed due to InsertUser error",
+			fields: fields{
+				cfg:  mockCfg,
+				repo: mockRepo,
+			},
+			args: args{
+				ctx: context.Background(),
+				id:  mockUser.ID,
+				userReq: &req.CreateUpdateUserReq{
+					Email: mockUser.Email,
+				},
+			},
+			setup: func() {
+				mockRepo.On("GetUserByID", context.Background(), mockUser.ID).Once().Return(mockUser, nil)
+				mockRepo.On("TxBegin").Once().Return(mockTx, nil)
+				mockRepo.On("UpdateUser", context.Background(), mockTx, mock.Anything).Once().Return(testutil.MockErr)
+				mockRepo.On("TxEnd", mockTx, testutil.MockErr).Once().Return(nil)
+			},
+			wantErr: true,
+		},
+		{
+			name: "failed due to TxEnd error",
+			fields: fields{
+				cfg:  mockCfg,
+				repo: mockRepo,
+			},
+			args: args{
+				ctx: context.Background(),
+				id:  mockUser.ID,
+				userReq: &req.CreateUpdateUserReq{
+					Email: mockUser.Email,
+				},
+			},
+			setup: func() {
+				mockRepo.On("GetUserByID", context.Background(), mockUser.ID).Once().Return(mockUser, nil)
+				mockRepo.On("TxBegin").Once().Return(mockTx, nil)
+				mockRepo.On("UpdateUser", context.Background(), mockTx, mock.Anything).Once().Return(nil)
+				mockRepo.On("TxEnd", mockTx, nil).Once().Return(testutil.MockErr)
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			u := &APIUsecaseImpl{
+				cfg:  tt.fields.cfg,
+				repo: tt.fields.repo,
+			}
+
+			tt.setup()
+
+			if err := u.UpdateUser(tt.args.ctx, tt.args.id, tt.args.userReq); (err != nil) != tt.wantErr {
+				t.Errorf("APIUsecaseImpl.UpdateUser() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}

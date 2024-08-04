@@ -289,8 +289,10 @@ func TestPostgresRepo_InsertUser(t *testing.T) {
 				user: mockUser,
 			},
 			setup: func() {
-				mockSql.ExpectExec("INSERT").WithArgs(mockUser.Email, mockUser.CreatedAt, mockUser.CreatedBy).
-					WillReturnResult(sqlmock.NewResult(mockUser.ID, 1))
+				mockSql.ExpectQuery("INSERT").WithArgs(mockUser.Email, mockUser.CreatedAt, mockUser.CreatedBy).
+					WillReturnRows(
+						mockSql.NewRows([]string{"id"}).
+							AddRow(mockUser.ID))
 			},
 			want:    mockUser.ID,
 			wantErr: false,
@@ -303,21 +305,8 @@ func TestPostgresRepo_InsertUser(t *testing.T) {
 				user: mockUser,
 			},
 			setup: func() {
-				mockSql.ExpectExec("INSERT").WithArgs(mockUser.Email, mockUser.CreatedAt, mockUser.CreatedBy).
+				mockSql.ExpectQuery("INSERT").WithArgs(mockUser.Email, mockUser.CreatedAt, mockUser.CreatedBy).
 					WillReturnError(testutil.MockErrDuplicate)
-			},
-			wantErr: true,
-		},
-		{
-			name:   "failed due to call lastInsertID error",
-			fields: fields{DB: sqlxDB},
-			args: args{
-				ctx:  context.Background(),
-				user: mockUser,
-			},
-			setup: func() {
-				mockSql.ExpectExec("INSERT").WithArgs(mockUser.Email, mockUser.CreatedAt, mockUser.CreatedBy).
-					WillReturnResult(sqlmock.NewErrorResult(testutil.MockErr))
 			},
 			wantErr: true,
 		},
@@ -329,7 +318,7 @@ func TestPostgresRepo_InsertUser(t *testing.T) {
 				user: mockUser,
 			},
 			setup: func() {
-				mockSql.ExpectExec("INSERT").WithArgs(mockUser.Email, mockUser.CreatedAt, mockUser.CreatedBy).
+				mockSql.ExpectQuery("INSERT").WithArgs(mockUser.Email, mockUser.CreatedAt, mockUser.CreatedBy).
 					WillReturnError(sql.ErrConnDone)
 			},
 			wantErr: true,

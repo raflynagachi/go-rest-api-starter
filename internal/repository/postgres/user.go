@@ -82,22 +82,21 @@ func (r *PostgresRepo) GetUserByID(ctx context.Context, id int64) (*model.User, 
 func (r *PostgresRepo) InsertUser(ctx context.Context, tx *sqlx.Tx, user *model.User) (int64, error) {
 	query := `
 		INSERT INTO users (email, created_at, created_by)
-		VALUES (:email, :created_at, :created_by)
+		VALUES (?, ?, ?)
+		RETURNING id
 	`
 
-	result, err := r.DB.NamedExecContext(ctx, query, user)
+	query = r.DB.Rebind(query)
+
+	var lastID int64
+	err := tx.GetContext(ctx, &lastID, query, user.Email, user.Created.CreatedAt, user.Created.CreatedBy)
 	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok {
 			if pqErr.Code == database.ERR_PQ_CODE_DUPLICATE {
-				return 0, errors.Wrap(apperror.ErrDuplicate, "PostgresRepo.InsertUser.NamedExecContext")
+				return 0, errors.Wrap(apperror.ErrDuplicate, "PostgresRepo.InsertUser.GetContext")
 			}
 		}
-		return 0, errors.Wrap(err, "PostgresRepo.InsertUser.NamedExecContext")
-	}
-
-	lastID, err := result.LastInsertId()
-	if err != nil {
-		return 0, errors.Wrap(err, "PostgresRepo.InsertUser.LastInserId")
+		return 0, errors.Wrap(err, "PostgresRepo.InsertUser.GetContext")
 	}
 
 	return lastID, nil

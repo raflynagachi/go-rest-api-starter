@@ -18,6 +18,7 @@ run:
 mock:
 	@mockery --all --dir internal/repository/definition --output=internal/repository/definition/mocks
 	@mockery --all --dir internal/usecase/definition --output=internal/usecase/definition/mocks
+	@mockery --all --dir internal/handler/definition --output=internal/handler/definition/mocks
 
 test:
 	@echo "Running tests..."

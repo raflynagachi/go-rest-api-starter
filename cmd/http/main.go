@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/raflynagachi/go-rest-api-starter/config"
 	hn "github.com/raflynagachi/go-rest-api-starter/internal/handler"
@@ -25,6 +26,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to connect database: %v", err)
 	}
+	defer db.Close()
 
 	repo := postgres.New(db)
 	usecase := uc.New(cfg, repo)
@@ -37,7 +39,7 @@ func main() {
 		serverErr <- r.ServeHTTP()
 	}()
 
-	// Handle shutdown signals
+	// handle shutdown signals
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
 
@@ -50,9 +52,13 @@ func main() {
 		log.Printf("received signal: %v", sig)
 	}
 
-	// Graceful shutdown
-	if shutdownErr := r.Shutdown(context.Background()); shutdownErr != nil {
-		log.Printf("error during shutdown: %v", shutdownErr)
-	}
+	// the context is used as timeout to finish currently handling request
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
+	if err := r.Shutdown(ctx); err != nil {
+		log.Fatalf("error %v while shutting down Server\nInitiating force shutdown...", err)
+	} else {
+		log.Print("server exiting")
+	}
 }

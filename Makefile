@@ -4,7 +4,7 @@ LDFLAGS := -ldflags "-X main.commitHash=`git rev-parse --short HEAD`"
 
 # provide database information in environment
 DB_DSN ?= postgres://$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=disable&user=$(DB_USER)&password=$(DB_PASSWORD)
-MIGRATE := docker run -v $(shell pwd)/migrations:/migrations --network host migrate/migrate:v4.17.1 -path=/migrations/ -database "$(DB_DSN)"
+MIGRATE := docker run --rm -v $(shell pwd)/migrations:/migrations --network host migrate/migrate:v4.17.1 -path=/migrations/ -database "$(DB_DSN)"
 
 build:
 	@go build $(LDFLAGS) -o bin/go-rest-api-starter ./cmd/http

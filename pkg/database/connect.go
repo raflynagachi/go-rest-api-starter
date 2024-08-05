@@ -24,5 +24,8 @@ func ConnectDB(cfg *config.Database) (*sqlx.DB, error) {
 		return nil, errors.Wrap(err, "sqlx.Connect")
 	}
 
+	db.SetMaxIdleConns(5)
+	db.SetMaxOpenConns(5)
+
 	return db, nil
 }

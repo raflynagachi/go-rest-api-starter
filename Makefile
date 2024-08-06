@@ -1,5 +1,4 @@
-
-PACKAGES := $(shell go list ./... | grep -v /vendor/)
+PACKAGES := $(shell go list ./... | grep -v /vendor/ | grep -v /mocks)
 LDFLAGS := -ldflags "-X main.commitHash=`git rev-parse --short HEAD`"
 
 # provide database information in environment

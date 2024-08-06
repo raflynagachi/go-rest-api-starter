@@ -1,20 +1,23 @@
 package response
 
 import (
-	"fmt"
+	"log/slog"
 	"net/http"
-
-	"github.com/rs/zerolog/log"
 )
 
 type Response struct {
 	Code int         `json:"code"`
 	Data interface{} `json:"data"`
-	Meta interface{} `json:"meta,omitempty"`
+	Meta `json:"-"`
 }
 
-func WriteResponse(w http.ResponseWriter, response Response) {
-	log.Info().Msg(fmt.Sprintf("%+v", response))
+func WriteResponse(w http.ResponseWriter, response Response, log *slog.Logger) {
+	log.Info(
+		"send response",
+		slog.Int("code", response.Code),
+		slog.String("path", response.Meta.Path),
+		slog.String("method", response.Meta.Method),
+	)
 
 	w.WriteHeader(response.Code)
 	err := encodeJson(w, response)
@@ -23,9 +26,13 @@ func WriteResponse(w http.ResponseWriter, response Response) {
 	}
 }
 
-func WriteOKResponse(w http.ResponseWriter, data interface{}) {
+func WriteOKResponse(w http.ResponseWriter, r *http.Request, data interface{}, logger *slog.Logger) {
 	WriteResponse(w, Response{
 		Code: http.StatusOK,
 		Data: data,
-	})
+		Meta: Meta{
+			Path:   r.URL.Path,
+			Method: r.Method,
+		},
+	}, logger)
 }

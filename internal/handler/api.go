@@ -14,73 +14,73 @@ func (h *APIHandlerImpl) GetUser(w http.ResponseWriter, r *http.Request, _ httpr
 	filter := req.UserFilter{}
 	err := populateStructFromQueryParams(r, &filter)
 	if err != nil {
-		response.WriteFromError(w, response.WrapErrBadRequest(err))
+		response.WriteFromError(w, r, response.WrapErrBadRequest(err), h.appLogger)
 		return
 	}
 
 	ctx := r.Context()
 	resp, err := h.usecase.GetUser(ctx, filter)
 	if err != nil {
-		response.WriteFromError(w, err)
+		response.WriteFromError(w, r, err, h.appLogger)
 		return
 	}
 
-	response.WriteOKResponse(w, resp)
+	response.WriteOKResponse(w, r, resp, h.appLogger)
 }
 
 func (h *APIHandlerImpl) GetUserByID(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	id, err := strconv.Atoi(ps.ByName("id"))
 	if err != nil {
-		response.WriteFromError(w, response.WrapErrBadRequest(err))
+		response.WriteFromError(w, r, response.WrapErrBadRequest(err), h.appLogger)
 		return
 	}
 
 	ctx := r.Context()
 	resp, err := h.usecase.GetUserByID(ctx, int64(id))
 	if err != nil {
-		response.WriteFromError(w, err)
+		response.WriteFromError(w, r, err, h.appLogger)
 		return
 	}
 
-	response.WriteOKResponse(w, resp)
+	response.WriteOKResponse(w, r, resp, h.appLogger)
 }
 
-func (a *APIHandlerImpl) CreateUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+func (h *APIHandlerImpl) CreateUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	req := &req.CreateUpdateUserReq{}
 	err := encoder.DecodeJson(r, req)
 	if err != nil {
-		response.WriteFromError(w, response.WrapErrBadRequest(err))
+		response.WriteFromError(w, r, response.WrapErrBadRequest(err), h.appLogger)
 		return
 	}
 
-	err = a.usecase.CreateUser(r.Context(), req)
+	err = h.usecase.CreateUser(r.Context(), req)
 	if err != nil {
-		response.WriteFromError(w, err)
+		response.WriteFromError(w, r, err, h.appLogger)
 		return
 	}
 
-	response.WriteOKResponse(w, "create User success")
+	response.WriteOKResponse(w, r, "create User success", h.appLogger)
 }
 
-func (a *APIHandlerImpl) UpdateUser(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func (h *APIHandlerImpl) UpdateUser(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	id, err := strconv.Atoi(ps.ByName("id"))
 	if err != nil {
-		response.WriteFromError(w, response.WrapErrBadRequest(err))
+		response.WriteFromError(w, r, response.WrapErrBadRequest(err), h.appLogger)
 		return
 	}
 
 	req := &req.CreateUpdateUserReq{}
 	err = encoder.DecodeJson(r, req)
 	if err != nil {
-		response.WriteFromError(w, response.WrapErrBadRequest(err))
+		response.WriteFromError(w, r, response.WrapErrBadRequest(err), h.appLogger)
 		return
 	}
 
-	err = a.usecase.UpdateUser(r.Context(), int64(id), req)
+	err = h.usecase.UpdateUser(r.Context(), int64(id), req)
 	if err != nil {
-		response.WriteFromError(w, err)
+		response.WriteFromError(w, r, err, h.appLogger)
 		return
 	}
 
-	response.WriteOKResponse(w, "update User success")
+	response.WriteOKResponse(w, r, "update User success", h.appLogger)
 }

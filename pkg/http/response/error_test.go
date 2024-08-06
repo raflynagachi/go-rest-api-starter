@@ -104,6 +104,7 @@ func TestWriteFromError(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			recorder := httptest.NewRecorder()
+			request := httptest.NewRequest(http.MethodGet, "/users", http.NoBody)
 
 			tmpFindErrResponse := findErrResponse
 			tmpEncodeJson := encodeJson
@@ -115,7 +116,7 @@ func TestWriteFromError(t *testing.T) {
 				encodeJson = tmpEncodeJson
 			}()
 
-			WriteFromError(recorder, tt.err)
+			WriteFromError(recorder, request, tt.err, mockLogger)
 
 			body := recorder.Body.String()
 			body = strings.ReplaceAll(body, "\n", "")

@@ -1,14 +1,15 @@
 package response
 
 import (
-	"fmt"
+	"bytes"
+	"io"
+	"log/slog"
 	"net/http"
 	"strings"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/pkg/errors"
 	appValidator "github.com/raflynagachi/go-rest-api-starter/pkg/validator"
-	"github.com/rs/zerolog/log"
 )
 
 const ()
@@ -24,7 +25,7 @@ func (e ErrResponse) Error() string {
 }
 
 // WriteFromError writes a formatted error response
-func WriteFromError(w http.ResponseWriter, e error) {
+func WriteFromError(w http.ResponseWriter, r *http.Request, e error, log *slog.Logger) {
 	errResp, lastError := findErrResponse(e)
 	errResp.Message = lastError.Error()
 
@@ -41,7 +42,22 @@ func WriteFromError(w http.ResponseWriter, e error) {
 		}
 	}
 
-	log.Error().Msg(fmt.Sprintf("%+v with status code %d", errResp, errResp.Code))
+	var bodyBytes []byte
+	if r.Body != nil {
+		bodyBytes, _ = io.ReadAll(r.Body)
+		r.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+	}
+	body := string(bodyBytes)
+
+	log.Error(
+		"error response",
+		slog.Int("code", errResp.Code),
+		slog.String("path", r.URL.Path),
+		slog.String("method", r.Method),
+		slog.String("request", body),
+		slog.String("error", errResp.Error()),
+	)
+
 	if errResp.Code == http.StatusInternalServerError {
 		errResp.Err = errors.New("internal server error")
 		errResp.Message = errResp.Err.Error()

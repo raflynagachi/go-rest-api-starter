@@ -38,20 +38,32 @@ func TestEncodeJson(t *testing.T) {
 }
 
 func TestDecodeJson(t *testing.T) {
-	data := map[string]string{"key": "value"}
-	dataBytes, _ := json.Marshal(data)
+	t.Run("success with body", func(t *testing.T) {
+		data := map[string]string{"key": "value"}
+		dataBytes, _ := json.Marshal(data)
 
-	req := httptest.NewRequest(http.MethodPost, "/test", bytes.NewReader(dataBytes))
-	req.Header.Set("Content-Type", "application/json")
+		req := httptest.NewRequest(http.MethodPost, "/test", bytes.NewReader(dataBytes))
+		req.Header.Set("Content-Type", "application/json")
 
-	var result map[string]string
+		var result map[string]string
 
-	err := DecodeJson(req, &result)
-	if err != nil {
-		t.Fatalf("DecodeJson() error = %v", err)
-	}
+		err := DecodeJson(req, &result)
+		if err != nil {
+			t.Fatalf("DecodeJson() error = %v", err)
+		}
 
-	if !assert.Equal(t, data, result) {
-		t.Errorf("DecodeJson() result = %v, want %v", result, data)
-	}
+		if !assert.Equal(t, data, result) {
+			t.Errorf("DecodeJson() result = %v, want %v", result, data)
+		}
+	})
+
+	t.Run("success without body", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodPost, "/test", http.NoBody)
+		req.Header.Set("Content-Type", "application/json")
+
+		var result map[string]string
+
+		err := DecodeJson(req, &result)
+		assert.Error(t, err)
+	})
 }

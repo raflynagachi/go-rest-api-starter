@@ -55,7 +55,7 @@ func TestWriteResponse(t *testing.T) {
 
 			tt.setup()
 
-			WriteResponse(recorder, tt.response)
+			WriteResponse(recorder, tt.response, mockLogger)
 
 			body := recorder.Body.String()
 			body = strings.ReplaceAll(body, "\n", "")
@@ -87,8 +87,9 @@ func TestWriteOKResponse(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			recorder := httptest.NewRecorder()
+			request := httptest.NewRequest(http.MethodGet, "/users", http.NoBody)
 
-			WriteOKResponse(recorder, tt.data)
+			WriteOKResponse(recorder, request, tt.data, mockLogger)
 
 			assert.Equal(t, http.StatusOK, recorder.Code)
 			assert.JSONEq(t, tt.expectedBody, recorder.Body.String())

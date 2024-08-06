@@ -9,22 +9,24 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"github.com/raflynagachi/go-rest-api-starter/config"
 	hn "github.com/raflynagachi/go-rest-api-starter/internal/handler/definition"
-	"github.com/rs/zerolog/log"
+	"github.com/raflynagachi/go-rest-api-starter/pkg/logger"
 )
 
 type Router struct {
-	Cfg    *config.Config
-	Router *httprouter.Router
-	server *http.Server
-	mu     sync.Mutex // mutex to ensure thread-safe access
+	Cfg       *config.Config
+	Router    *httprouter.Router
+	appLogger *logger.Logger
+	server    *http.Server
+	mu        sync.Mutex // mutex to ensure thread-safe access
 }
 
 // New creates a new Router instance
-func New(cfg *config.Config, hn hn.APIHandler) *Router {
+func New(cfg *config.Config, log *logger.Logger, hn hn.APIHandler) *Router {
 	router := newRouter(hn)
 	return &Router{
-		Cfg:    cfg,
-		Router: router,
+		Cfg:       cfg,
+		appLogger: log,
+		Router:    router,
 	}
 }
 
@@ -36,7 +38,7 @@ func (r *Router) Start() error {
 		Handler: r.Router,
 	}
 
-	log.Info().Msg("Running on " + addr)
+	r.appLogger.Info(fmt.Sprintf("Running on %s", addr))
 	return r.server.ListenAndServe()
 }
 
@@ -49,7 +51,7 @@ func (r *Router) Shutdown(ctx context.Context) error {
 		return nil // server was not started
 	}
 
-	log.Info().Msg("Shutting down server")
+	r.appLogger.Info("Shutting down server")
 	return r.server.Shutdown(ctx)
 }
 

@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"io"
+	"log"
 	"reflect"
 	"testing"
 
@@ -9,15 +11,18 @@ import (
 	"github.com/raflynagachi/go-rest-api-starter/internal/handler/router"
 	uc "github.com/raflynagachi/go-rest-api-starter/internal/usecase/definition"
 	"github.com/raflynagachi/go-rest-api-starter/internal/usecase/definition/mocks"
+	"github.com/raflynagachi/go-rest-api-starter/pkg/logger"
 )
 
 var (
 	cfg         = &config.Config{}
 	mockUc      = new(mocks.APIUsecase)
-	mockHandler = router.New(cfg, New(mockUc))
+	mockLogger  = logger.NewLogger()
+	mockHandler = router.New(cfg, mockLogger, New(mockUc, mockLogger))
 )
 
 func TestMain(m *testing.M) {
+	log.SetOutput(io.Discard)
 	m.Run()
 }
 
@@ -38,13 +43,14 @@ func TestNew(t *testing.T) {
 				usecase: mockUc,
 			},
 			want: &APIHandlerImpl{
-				usecase: mockUc,
+				usecase:   mockUc,
+				appLogger: mockLogger,
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := New(tt.args.usecase); !reflect.DeepEqual(got, tt.want) {
+			if got := New(tt.args.usecase, mockLogger); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("New() = %v, want %v", got, tt.want)
 			}
 		})

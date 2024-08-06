@@ -358,8 +358,9 @@ func TestAPIUsecaseImpl_CreateUser(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			u := &APIUsecaseImpl{
-				cfg:  tt.fields.cfg,
-				repo: tt.fields.repo,
+				cfg:       tt.fields.cfg,
+				repo:      tt.fields.repo,
+				appLogger: mockLogger,
 			}
 
 			tt.setup()
@@ -483,7 +484,7 @@ func TestAPIUsecaseImpl_UpdateUser(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "failed due to InsertUser error",
+			name: "failed due to UpdateUser error",
 			fields: fields{
 				cfg:  mockCfg,
 				repo: mockRepo,
@@ -528,8 +529,9 @@ func TestAPIUsecaseImpl_UpdateUser(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			u := &APIUsecaseImpl{
-				cfg:  tt.fields.cfg,
-				repo: tt.fields.repo,
+				cfg:       tt.fields.cfg,
+				appLogger: mockLogger,
+				repo:      tt.fields.repo,
 			}
 
 			tt.setup()

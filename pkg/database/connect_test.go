@@ -16,6 +16,8 @@ func TestConnectDB(t *testing.T) {
 	require.NoError(t, err)
 	defer mockDB.Close()
 
+	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
+
 	tests := []struct {
 		name        string
 		cfg         *config.Database
@@ -33,7 +35,7 @@ func TestConnectDB(t *testing.T) {
 			},
 			setup: func() {
 				sqlxConnect = func(driverName, dataSourceName string) (*sqlx.DB, error) {
-					return &sqlx.DB{}, nil
+					return sqlxDB, nil
 				}
 			},
 			expectedErr: false,
@@ -49,7 +51,7 @@ func TestConnectDB(t *testing.T) {
 			},
 			setup: func() {
 				sqlxConnect = func(driverName, dataSourceName string) (*sqlx.DB, error) {
-					return &sqlx.DB{}, sql.ErrConnDone
+					return sqlxDB, sql.ErrConnDone
 				}
 			},
 			expectedErr: true,

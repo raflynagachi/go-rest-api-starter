@@ -8,6 +8,7 @@ import (
 
 	"github.com/raflynagachi/go-rest-api-starter/config"
 	"github.com/raflynagachi/go-rest-api-starter/internal/handler/definition/mocks"
+	"github.com/raflynagachi/go-rest-api-starter/pkg/logger"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -19,10 +20,11 @@ var (
 			Port: 8080,
 		},
 	}
+	mockLogger = logger.NewLogger()
 )
 
 func TestNewRouter(t *testing.T) {
-	router := New(mockCfg, mockHandler)
+	router := New(mockCfg, mockLogger, mockHandler)
 
 	assert.NotNil(t, router)
 	assert.Equal(t, mockCfg, router.Cfg)
@@ -30,7 +32,7 @@ func TestNewRouter(t *testing.T) {
 }
 
 func TestRouter_ServeHTTP(t *testing.T) {
-	r := New(mockCfg, mockHandler)
+	r := New(mockCfg, mockLogger, mockHandler)
 
 	go func() {
 		r.ServeHTTP()
@@ -51,7 +53,7 @@ func TestRouter_ServeHTTP(t *testing.T) {
 }
 
 func TestRouter_Shutdown(t *testing.T) {
-	r := New(mockCfg, mockHandler)
+	r := New(mockCfg, mockLogger, mockHandler)
 
 	err := r.Shutdown(context.Background())
 	require.NoError(t, err)

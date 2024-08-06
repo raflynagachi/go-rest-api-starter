@@ -17,20 +17,24 @@ type Config struct {
 
 var (
 	readJsonConfig = ReadJsonConfig
+
+	Env string
 )
+
+func init() {
+	Env = os.Getenv(EnvKey)
+	if Env == "" {
+		Env = Development // default environment
+	}
+}
 
 // LoadConfig load configuration based on env
 func LoadConfig() (*Config, error) {
-	env := os.Getenv(EnvKey)
-	if env == "" {
-		env = Development // default environment
-	}
-
-	path := fmt.Sprintf("env/%s.%s.json", ServiceName, env)
+	path := fmt.Sprintf("env/%s.%s.json", ServiceName, Env)
 
 	config, err := readJsonConfig(path)
 	if err != nil {
-		return nil, errors.Wrap(err, "LoadConfig|readJsonConfig")
+		return nil, errors.Wrap(err, "LoadConfig.readJsonConfig")
 	}
 
 	return config, nil

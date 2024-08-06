@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -14,25 +13,30 @@ import (
 	"github.com/raflynagachi/go-rest-api-starter/internal/repository/postgres"
 	uc "github.com/raflynagachi/go-rest-api-starter/internal/usecase"
 	"github.com/raflynagachi/go-rest-api-starter/pkg/database"
+	"github.com/raflynagachi/go-rest-api-starter/pkg/logger"
 )
 
 func main() {
+	appLogger := logger.NewLogger(logger.WithEnv(config.Env))
+
 	cfg, err := config.LoadConfig()
 	if err != nil {
-		log.Fatalf("failed to load config: %v", err)
+		appLogger.Error("failed to load config", logger.ErrAttr(err))
+		return
 	}
 
 	db, err := database.ConnectDB(cfg.Databases[config.ServiceName])
 	if err != nil {
-		log.Fatalf("failed to connect database: %v", err)
+		appLogger.Error("failed to connect database: ", logger.ErrAttr(err))
+		return
 	}
 	defer db.Close()
 
-	repo := postgres.New(db)
-	usecase := uc.New(cfg, repo)
-	handler := hn.New(usecase)
+	repo := postgres.New(db, appLogger)
+	usecase := uc.New(cfg, appLogger, repo)
+	handler := hn.New(usecase, appLogger)
 
-	r := router.New(cfg, handler)
+	r := router.New(cfg, appLogger, handler)
 
 	serverErr := make(chan error, 1)
 	go func() {
@@ -46,10 +50,11 @@ func main() {
 	select {
 	case err := <-serverErr:
 		if err != nil {
-			log.Fatalf("server error: %v", err)
+			appLogger.Error("server error: ", logger.ErrAttr(err))
+			return
 		}
 	case sig := <-stop:
-		log.Printf("received signal: %v", sig)
+		appLogger.Info("received signal: ", logger.StringAttr("signal", sig.String()))
 	}
 
 	// the context is used as timeout to finish currently handling request
@@ -57,8 +62,8 @@ func main() {
 	defer cancel()
 
 	if err := r.Shutdown(ctx); err != nil {
-		log.Fatalf("error %v while shutting down Server\nInitiating force shutdown...", err)
+		appLogger.Error("error while shutting down Server, initiating force shutdown...", logger.ErrAttr(err))
 	} else {
-		log.Print("server exiting")
+		appLogger.Info("server exiting")
 	}
 }

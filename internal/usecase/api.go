@@ -11,7 +11,6 @@ import (
 	paginationutil "github.com/raflynagachi/go-rest-api-starter/internal/util/pagination"
 	"github.com/raflynagachi/go-rest-api-starter/pkg/http/response"
 	"github.com/raflynagachi/go-rest-api-starter/pkg/validator"
-	"github.com/rs/zerolog/log"
 )
 
 func (u *APIUsecaseImpl) GetUser(ctx context.Context, filter req.UserFilter) (*resp.ListResponse, error) {
@@ -104,7 +103,7 @@ func (u *APIUsecaseImpl) CreateUser(ctx context.Context, userReq *req.CreateUpda
 	defer func() {
 		if txErr := u.repo.TxEnd(tx, err); txErr != nil {
 			txErr = errors.Wrap(txErr, "APIUsecase.CreateUser.TxEnd")
-			log.Error().Msg(txErr.Error())
+			u.appLogger.ErrorContext(ctx, txErr.Error())
 		}
 	}()
 
@@ -148,7 +147,7 @@ func (u *APIUsecaseImpl) UpdateUser(ctx context.Context, id int64, userReq *req.
 	defer func() {
 		if txErr := u.repo.TxEnd(tx, err); txErr != nil {
 			txErr = errors.Wrap(txErr, "APIUsecase.UpdateUser.TxEnd")
-			log.Error().Msg(txErr.Error())
+			u.appLogger.ErrorContext(ctx, txErr.Error())
 		}
 	}()
 

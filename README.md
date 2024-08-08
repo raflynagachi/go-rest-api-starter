@@ -1,5 +1,6 @@
 # Go REST API starter kit
 
+[![Coverage Status](https://codecov.io/gh/raflynagachi/go-rest-api-starter/branch/main/graph/badge.svg)](https://codecov.io/gh/raflynagachi/go-rest-api-starter)
 [![Go Report Card](https://goreportcard.com/badge/github.com/raflynagachi/go-rest-api-starter)](https://goreportcard.com/report/github.com/raflynagachi/go-rest-api-starter)
 
 ## Overview

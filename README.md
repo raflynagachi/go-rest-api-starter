@@ -1,5 +1,7 @@
 # Go REST API starter kit
 
+[![Go Report Card](https://goreportcard.com/badge/github.com/raflynagachi/go-rest-api-starter)](https://goreportcard.com/report/github.com/raflynagachi/go-rest-api-starter)
+
 ## Overview
 The Go REST API Starter Kit is a boilerplate project designed to help you quickly set up and develop RESTful APIs using Go.
 

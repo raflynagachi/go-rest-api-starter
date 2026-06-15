@@ -11,14 +11,16 @@ import (
 	"github.com/raflynagachi/go-rest-api-starter/internal/handler/router"
 	uc "github.com/raflynagachi/go-rest-api-starter/internal/usecase/definition"
 	"github.com/raflynagachi/go-rest-api-starter/internal/usecase/definition/mocks"
+	"github.com/raflynagachi/go-rest-api-starter/internal/util/testutil"
 	"github.com/raflynagachi/go-rest-api-starter/pkg/logger"
 )
 
 var (
-	cfg         = &config.Config{}
+	cfg         = &config.Config{JwtKey: testutil.TestJWTSecret}
 	mockUc      = new(mocks.APIUsecase)
-	mockLogger  = logger.NewLogger()
+	mockLogger  = logger.NewLogger(logger.WithEnv("test"))
 	mockHandler = router.New(cfg, mockLogger, New(mockUc, mockLogger))
+	testToken   = testutil.GenerateTestToken("test@example.com")
 )
 
 func TestMain(m *testing.M) {

@@ -14,6 +14,7 @@ import (
 	randomutil "github.com/raflynagachi/go-rest-api-starter/internal/util/random"
 	"github.com/raflynagachi/go-rest-api-starter/internal/util/testutil"
 	"github.com/raflynagachi/go-rest-api-starter/pkg/http/response"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestAPIHandlerImpl_GetUser(t *testing.T) {
@@ -236,6 +237,17 @@ func TestAPIHandlerImpl_CreateUser(t *testing.T) {
 		wantCode int
 	}{
 		{
+			name: "failed due to missing auth token",
+			args: func(t *testing.T) args {
+				req, err := http.NewRequest(http.MethodPost, "/users", http.NoBody)
+				if err != nil {
+					t.Fatalf("fail to create request: %v", err)
+				}
+				return args{request: req}
+			},
+			wantCode: http.StatusUnauthorized,
+		},
+		{
 			name: "success create user",
 			args: func(t *testing.T) args {
 				reqModel := mockReq
@@ -249,8 +261,9 @@ func TestAPIHandlerImpl_CreateUser(t *testing.T) {
 				if err != nil {
 					t.Fatalf("fail to create request: %v", err)
 				}
+				req.Header.Set("Authorization", testToken)
 
-				mockUc.On("CreateUser", req.Context(), reqModel).
+				mockUc.On("CreateUser", mock.Anything, reqModel).
 					Once().Return(nil)
 
 				return args{request: req}
@@ -264,6 +277,7 @@ func TestAPIHandlerImpl_CreateUser(t *testing.T) {
 				if err != nil {
 					t.Fatalf("fail to create request: %v", err)
 				}
+				req.Header.Set("Authorization", testToken)
 
 				return args{request: req}
 			},
@@ -283,8 +297,9 @@ func TestAPIHandlerImpl_CreateUser(t *testing.T) {
 				if err != nil {
 					t.Fatalf("fail to create request: %v", err)
 				}
+				req.Header.Set("Authorization", testToken)
 
-				mockUc.On("CreateUser", req.Context(), reqModel).
+				mockUc.On("CreateUser", mock.Anything, reqModel).
 					Once().Return(response.WrapErrBadRequest(testutil.MockErr))
 
 				return args{request: req}
@@ -305,8 +320,9 @@ func TestAPIHandlerImpl_CreateUser(t *testing.T) {
 				if err != nil {
 					t.Fatalf("fail to create request: %v", err)
 				}
+				req.Header.Set("Authorization", testToken)
 
-				mockUc.On("CreateUser", req.Context(), reqModel).
+				mockUc.On("CreateUser", mock.Anything, reqModel).
 					Once().Return(response.WrapErrInternalServer(testutil.MockErr))
 
 				return args{request: req}
@@ -346,6 +362,18 @@ func TestAPIHandlerImpl_UpdateUser(t *testing.T) {
 		wantCode int
 	}{
 		{
+			name: "failed_errorMissingAuthToken",
+			args: func(t *testing.T) args {
+				path := fmt.Sprintf("/users/%d", mockUser.ID)
+				req, err := http.NewRequest(http.MethodPut, path, http.NoBody)
+				if err != nil {
+					t.Fatalf("fail to create request: %v", err)
+				}
+				return args{request: req}
+			},
+			wantCode: http.StatusUnauthorized,
+		},
+		{
 			name: "success_updateUser",
 			args: func(t *testing.T) args {
 				reqModel := mockReq
@@ -360,8 +388,9 @@ func TestAPIHandlerImpl_UpdateUser(t *testing.T) {
 				if err != nil {
 					t.Fatalf("fail to create request: %v", err)
 				}
+				req.Header.Set("Authorization", testToken)
 
-				mockUc.On("UpdateUser", req.Context(), mockUser.ID, reqModel).
+				mockUc.On("UpdateUser", mock.Anything, mockUser.ID, reqModel).
 					Once().Return(nil)
 
 				return args{request: req}
@@ -376,6 +405,7 @@ func TestAPIHandlerImpl_UpdateUser(t *testing.T) {
 				if err != nil {
 					t.Fatalf("fail to create request: %v", err)
 				}
+				req.Header.Set("Authorization", testToken)
 
 				return args{request: req}
 			},
@@ -389,6 +419,7 @@ func TestAPIHandlerImpl_UpdateUser(t *testing.T) {
 				if err != nil {
 					t.Fatalf("fail to create request: %v", err)
 				}
+				req.Header.Set("Authorization", testToken)
 
 				return args{request: req}
 			},
@@ -409,8 +440,9 @@ func TestAPIHandlerImpl_UpdateUser(t *testing.T) {
 				if err != nil {
 					t.Fatalf("fail to create request: %v", err)
 				}
+				req.Header.Set("Authorization", testToken)
 
-				mockUc.On("UpdateUser", req.Context(), mockUser.ID, reqModel).
+				mockUc.On("UpdateUser", mock.Anything, mockUser.ID, reqModel).
 					Once().Return(response.WrapErrBadRequest(testutil.MockErr))
 
 				return args{request: req}
@@ -432,8 +464,9 @@ func TestAPIHandlerImpl_UpdateUser(t *testing.T) {
 				if err != nil {
 					t.Fatalf("fail to create request: %v", err)
 				}
+				req.Header.Set("Authorization", testToken)
 
-				mockUc.On("UpdateUser", req.Context(), mockUser.ID, reqModel).
+				mockUc.On("UpdateUser", mock.Anything, mockUser.ID, reqModel).
 					Once().Return(response.WrapErrInternalServer(testutil.MockErr))
 
 				return args{request: req}
@@ -450,6 +483,111 @@ func TestAPIHandlerImpl_UpdateUser(t *testing.T) {
 
 			if res.StatusCode != tt.wantCode {
 				t.Errorf("APIHandler.UpdateUser() code = %v, wantCode %v", res.StatusCode, tt.wantCode)
+				return
+			}
+		})
+	}
+}
+
+func TestAPIHandlerImpl_DeleteUser(t *testing.T) {
+	mockUser := randomutil.RandomUser()
+
+	type args struct {
+		request *http.Request
+	}
+
+	tests := []struct {
+		name     string
+		args     func(t *testing.T) args
+		wantCode int
+	}{
+		{
+			name: "failed_errorMissingAuthToken",
+			args: func(t *testing.T) args {
+				path := fmt.Sprintf("/users/%d", mockUser.ID)
+				req, err := http.NewRequest(http.MethodDelete, path, http.NoBody)
+				if err != nil {
+					t.Fatalf("fail to create request: %v", err)
+				}
+				return args{request: req}
+			},
+			wantCode: http.StatusUnauthorized,
+		},
+		{
+			name: "success_deleteUser",
+			args: func(t *testing.T) args {
+				path := fmt.Sprintf("/users/%d", mockUser.ID)
+				req, err := http.NewRequest(http.MethodDelete, path, http.NoBody)
+				if err != nil {
+					t.Fatalf("fail to create request: %v", err)
+				}
+				req.Header.Set("Authorization", testToken)
+
+				mockUc.On("DeleteUser", mock.Anything, mockUser.ID).
+					Once().Return(nil)
+
+				return args{request: req}
+			},
+			wantCode: http.StatusOK,
+		},
+		{
+			name: "failed_errorInvalidIDParam",
+			args: func(t *testing.T) args {
+				path := fmt.Sprintf("/users/%s", "invalid")
+				req, err := http.NewRequest(http.MethodDelete, path, http.NoBody)
+				if err != nil {
+					t.Fatalf("fail to create request: %v", err)
+				}
+				req.Header.Set("Authorization", testToken)
+
+				return args{request: req}
+			},
+			wantCode: http.StatusBadRequest,
+		},
+		{
+			name: "failed_errorNotFound",
+			args: func(t *testing.T) args {
+				path := fmt.Sprintf("/users/%d", mockUser.ID)
+				req, err := http.NewRequest(http.MethodDelete, path, http.NoBody)
+				if err != nil {
+					t.Fatalf("fail to create request: %v", err)
+				}
+				req.Header.Set("Authorization", testToken)
+
+				mockUc.On("DeleteUser", mock.Anything, mockUser.ID).
+					Once().Return(response.WrapErrNotFound(testutil.MockErr))
+
+				return args{request: req}
+			},
+			wantCode: http.StatusNotFound,
+		},
+		{
+			name: "failed_errorInternalServer",
+			args: func(t *testing.T) args {
+				path := fmt.Sprintf("/users/%d", mockUser.ID)
+				req, err := http.NewRequest(http.MethodDelete, path, http.NoBody)
+				if err != nil {
+					t.Fatalf("fail to create request: %v", err)
+				}
+				req.Header.Set("Authorization", testToken)
+
+				mockUc.On("DeleteUser", mock.Anything, mockUser.ID).
+					Once().Return(response.WrapErrInternalServer(testutil.MockErr))
+
+				return args{request: req}
+			},
+			wantCode: http.StatusInternalServerError,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tArgs := tt.args(t)
+			resp := httptest.NewRecorder()
+			mockHandler.Router.ServeHTTP(resp, tArgs.request)
+			res := resp.Result()
+
+			if res.StatusCode != tt.wantCode {
+				t.Errorf("APIHandler.DeleteUser() code = %v, wantCode %v", res.StatusCode, tt.wantCode)
 				return
 			}
 		})

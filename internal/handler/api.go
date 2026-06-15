@@ -10,6 +10,37 @@ import (
 	"github.com/raflynagachi/go-rest-api-starter/pkg/http/response"
 )
 
+func (h *APIHandlerImpl) Register(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	req := &req.RegisterReq{}
+	if err := encoder.DecodeJson(r, req); err != nil {
+		response.WriteFromError(w, r, response.WrapErrBadRequest(err), h.appLogger)
+		return
+	}
+
+	if err := h.usecase.Register(r.Context(), req); err != nil {
+		response.WriteFromError(w, r, err, h.appLogger)
+		return
+	}
+
+	response.WriteOKResponse(w, r, "register success", h.appLogger)
+}
+
+func (h *APIHandlerImpl) Login(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	req := &req.LoginReq{}
+	if err := encoder.DecodeJson(r, req); err != nil {
+		response.WriteFromError(w, r, response.WrapErrBadRequest(err), h.appLogger)
+		return
+	}
+
+	resp, err := h.usecase.Login(r.Context(), req)
+	if err != nil {
+		response.WriteFromError(w, r, err, h.appLogger)
+		return
+	}
+
+	response.WriteOKResponse(w, r, resp, h.appLogger)
+}
+
 func (h *APIHandlerImpl) GetUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	filter := req.UserFilter{}
 	err := populateStructFromQueryParams(r, &filter)

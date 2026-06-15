@@ -70,6 +70,13 @@ func WriteFromError(w http.ResponseWriter, r *http.Request, e error, log *slog.L
 	}
 }
 
+func WrapErrConflict(err error) ErrResponse {
+	return ErrResponse{
+		Code: http.StatusConflict,
+		Err:  err,
+	}
+}
+
 func WrapErrUnauthorized(err error) ErrResponse {
 	return ErrResponse{
 		Code: http.StatusUnauthorized,

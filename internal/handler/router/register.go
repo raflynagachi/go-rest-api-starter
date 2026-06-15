@@ -19,6 +19,8 @@ func newRouter(cfg *config.Config, log *logger.Logger, hn hn.APIHandler) *httpro
 
 	// public routes
 	router.GET("/ping", Ping)
+	router.POST("/auth/register", hn.Register)
+	router.POST("/auth/login", hn.Login)
 	router.GET("/users", hn.GetUser)
 	router.GET("/users/:id", hn.GetUserByID)
 

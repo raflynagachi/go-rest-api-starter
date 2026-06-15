@@ -17,6 +17,54 @@ type APIUsecase struct {
 	mock.Mock
 }
 
+// Login provides a mock function with given fields: ctx, _a1
+func (_m *APIUsecase) Login(ctx context.Context, _a1 *request.LoginReq) (*response.LoginResponse, error) {
+	ret := _m.Called(ctx, _a1)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Login")
+	}
+
+	var r0 *response.LoginResponse
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *request.LoginReq) (*response.LoginResponse, error)); ok {
+		return rf(ctx, _a1)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *request.LoginReq) *response.LoginResponse); ok {
+		r0 = rf(ctx, _a1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*response.LoginResponse)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, *request.LoginReq) error); ok {
+		r1 = rf(ctx, _a1)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Register provides a mock function with given fields: ctx, _a1
+func (_m *APIUsecase) Register(ctx context.Context, _a1 *request.RegisterReq) error {
+	ret := _m.Called(ctx, _a1)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Register")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *request.RegisterReq) error); ok {
+		r0 = rf(ctx, _a1)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // DeleteUser provides a mock function with given fields: ctx, id
 func (_m *APIUsecase) DeleteUser(ctx context.Context, id int64) error {
 	ret := _m.Called(ctx, id)

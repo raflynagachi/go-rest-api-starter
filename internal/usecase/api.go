@@ -6,6 +6,7 @@ import (
 
 	"github.com/guregu/null/v5"
 	"github.com/pkg/errors"
+	"golang.org/x/crypto/bcrypt"
 	"github.com/raflynagachi/go-rest-api-starter/internal/apperror"
 	req "github.com/raflynagachi/go-rest-api-starter/internal/dto/web/request"
 	resp "github.com/raflynagachi/go-rest-api-starter/internal/dto/web/response"
@@ -13,8 +14,75 @@ import (
 	paginationutil "github.com/raflynagachi/go-rest-api-starter/internal/util/pagination"
 	"github.com/raflynagachi/go-rest-api-starter/pkg/auth"
 	"github.com/raflynagachi/go-rest-api-starter/pkg/http/response"
+	appjwt "github.com/raflynagachi/go-rest-api-starter/pkg/jwt"
 	"github.com/raflynagachi/go-rest-api-starter/pkg/validator"
 )
+
+func (u *APIUsecaseImpl) Register(ctx context.Context, userReq *req.RegisterReq) error {
+	if err := validator.Validate(userReq); err != nil {
+		return errors.Wrap(response.WrapErrBadRequest(err), "APIUsecase.Register.Validate")
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(userReq.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return errors.Wrap(response.WrapErrInternalServer(err), "APIUsecase.Register.GenerateFromPassword")
+	}
+
+	user := &model.User{
+		Email:        userReq.Email,
+		PasswordHash: string(hash),
+		Created: model.Created{
+			CreatedAt: getTimeNow,
+			CreatedBy: userReq.Email,
+		},
+	}
+
+	tx, err := u.repo.TxBegin()
+	if err != nil {
+		return errors.Wrap(response.WrapErrInternalServer(err), "APIUsecase.Register.TxBegin")
+	}
+	defer func() {
+		if txErr := u.repo.TxEnd(tx, err); txErr != nil {
+			txErr = errors.Wrap(txErr, "APIUsecase.Register.TxEnd")
+			u.appLogger.ErrorContext(ctx, txErr.Error())
+		}
+	}()
+
+	_, err = u.repo.InsertUser(ctx, tx, user)
+	if err != nil {
+		if errors.Is(err, apperror.ErrDuplicate) {
+			return errors.Wrap(response.WrapErrConflict(err), "APIUsecase.Register.InsertUser")
+		}
+		return errors.Wrap(response.WrapErrInternalServer(err), "APIUsecase.Register.InsertUser")
+	}
+
+	return nil
+}
+
+func (u *APIUsecaseImpl) Login(ctx context.Context, userReq *req.LoginReq) (*resp.LoginResponse, error) {
+	if err := validator.Validate(userReq); err != nil {
+		return nil, errors.Wrap(response.WrapErrBadRequest(err), "APIUsecase.Login.Validate")
+	}
+
+	user, err := u.repo.GetUserByEmail(ctx, userReq.Email)
+	if err != nil {
+		if errors.Is(err, apperror.ErrNotFound) {
+			return nil, errors.Wrap(response.WrapErrUnauthorized(errors.New("invalid email or password")), "APIUsecase.Login.GetUserByEmail")
+		}
+		return nil, errors.Wrap(response.WrapErrInternalServer(err), "APIUsecase.Login.GetUserByEmail")
+	}
+
+	if err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(userReq.Password)); err != nil {
+		return nil, errors.Wrap(response.WrapErrUnauthorized(errors.New("invalid email or password")), "APIUsecase.Login.CompareHashAndPassword")
+	}
+
+	token, err := appjwt.GenerateToken(user.Email, u.cfg.JwtKey, 24*time.Hour)
+	if err != nil {
+		return nil, errors.Wrap(response.WrapErrInternalServer(err), "APIUsecase.Login.GenerateToken")
+	}
+
+	return &resp.LoginResponse{Token: token}, nil
+}
 
 func (u *APIUsecaseImpl) GetUser(ctx context.Context, filter req.UserFilter) (*resp.ListResponse, error) {
 	filter.Pagination.Validate()

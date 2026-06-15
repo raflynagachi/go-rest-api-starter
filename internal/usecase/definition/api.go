@@ -8,6 +8,8 @@ import (
 )
 
 type APIUsecase interface {
+	Register(ctx context.Context, request *req.RegisterReq) error
+	Login(ctx context.Context, request *req.LoginReq) (*resp.LoginResponse, error)
 	GetUser(ctx context.Context, filter req.UserFilter) (*resp.ListResponse, error)
 	GetUserByID(ctx context.Context, id int64) (*resp.UserResponse, error)
 	CreateUser(ctx context.Context, request *req.CreateUpdateUserReq) error

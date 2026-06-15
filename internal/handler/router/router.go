@@ -36,7 +36,7 @@ func (r *Router) Start() error {
 	addr := fmt.Sprintf(":%d", r.Cfg.App.Port)
 	r.server = &http.Server{
 		Addr:    addr,
-		Handler: middleware.Logging(r.appLogger, r.Router),
+		Handler: middleware.CORS(middleware.Logging(r.appLogger, middleware.RequestID(r.Router))),
 	}
 
 	r.appLogger.Info(fmt.Sprintf("Running on %s", addr))

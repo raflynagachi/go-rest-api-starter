@@ -28,6 +28,7 @@ func Logging(log *logger.Logger, next http.Handler) http.Handler {
 			slog.String("path", r.URL.Path),
 			slog.Int("status", rec.statusCode),
 			slog.Duration("duration", time.Since(start)),
+			slog.String("request_id", rec.Header().Get("X-Request-ID")),
 		)
 	})
 }

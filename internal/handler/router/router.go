@@ -9,6 +9,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"github.com/raflynagachi/go-rest-api-starter/config"
 	hn "github.com/raflynagachi/go-rest-api-starter/internal/handler/definition"
+	"github.com/raflynagachi/go-rest-api-starter/internal/handler/middleware"
 	"github.com/raflynagachi/go-rest-api-starter/pkg/logger"
 )
 
@@ -22,7 +23,7 @@ type Router struct {
 
 // New creates a new Router instance
 func New(cfg *config.Config, log *logger.Logger, hn hn.APIHandler) *Router {
-	router := newRouter(hn)
+	router := newRouter(cfg, log, hn)
 	return &Router{
 		Cfg:       cfg,
 		appLogger: log,
@@ -35,7 +36,7 @@ func (r *Router) Start() error {
 	addr := fmt.Sprintf(":%d", r.Cfg.App.Port)
 	r.server = &http.Server{
 		Addr:    addr,
-		Handler: r.Router,
+		Handler: middleware.Logging(r.appLogger, r.Router),
 	}
 
 	r.appLogger.Info(fmt.Sprintf("Running on %s", addr))

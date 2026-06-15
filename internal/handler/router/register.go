@@ -4,20 +4,28 @@ import (
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
+	"github.com/raflynagachi/go-rest-api-starter/config"
 	hn "github.com/raflynagachi/go-rest-api-starter/internal/handler/definition"
+	"github.com/raflynagachi/go-rest-api-starter/internal/handler/middleware"
+	"github.com/raflynagachi/go-rest-api-starter/pkg/logger"
 )
 
-func newRouter(hn hn.APIHandler) *httprouter.Router {
+func newRouter(cfg *config.Config, log *logger.Logger, hn hn.APIHandler) *httprouter.Router {
 	router := httprouter.New()
-	// middlewares
 
-	// API
+	jwtAuth := func(h httprouter.Handle) httprouter.Handle {
+		return middleware.JWTAuth(cfg.JwtKey, log, h)
+	}
+
+	// public routes
+	router.GET("/ping", Ping)
 	router.GET("/users", hn.GetUser)
 	router.GET("/users/:id", hn.GetUserByID)
-	router.POST("/users", hn.CreateUser)
-	router.PUT("/users/:id", hn.UpdateUser)
 
-	router.GET("/ping", Ping)
+	// protected routes (require JWT Bearer token)
+	router.POST("/users", jwtAuth(hn.CreateUser))
+	router.PUT("/users/:id", jwtAuth(hn.UpdateUser))
+	router.DELETE("/users/:id", jwtAuth(hn.DeleteUser))
 
 	return router
 }

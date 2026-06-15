@@ -62,6 +62,22 @@ func (h *APIHandlerImpl) CreateUser(w http.ResponseWriter, r *http.Request, _ ht
 	response.WriteOKResponse(w, r, "create User success", h.appLogger)
 }
 
+func (h *APIHandlerImpl) DeleteUser(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	id, err := strconv.Atoi(ps.ByName("id"))
+	if err != nil {
+		response.WriteFromError(w, r, response.WrapErrBadRequest(err), h.appLogger)
+		return
+	}
+
+	err = h.usecase.DeleteUser(r.Context(), int64(id))
+	if err != nil {
+		response.WriteFromError(w, r, err, h.appLogger)
+		return
+	}
+
+	response.WriteOKResponse(w, r, "delete User success", h.appLogger)
+}
+
 func (h *APIHandlerImpl) UpdateUser(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	id, err := strconv.Atoi(ps.ByName("id"))
 	if err != nil {

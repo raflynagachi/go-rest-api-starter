@@ -14,6 +14,11 @@ type APIHandler struct {
 	mock.Mock
 }
 
+// DeleteUser provides a mock function with given fields: w, r, ps
+func (_m *APIHandler) DeleteUser(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	_m.Called(w, r, ps)
+}
+
 // CreateUser provides a mock function with given fields: w, r, ps
 func (_m *APIHandler) CreateUser(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	_m.Called(w, r, ps)

@@ -17,6 +17,24 @@ type APIUsecase struct {
 	mock.Mock
 }
 
+// DeleteUser provides a mock function with given fields: ctx, id
+func (_m *APIUsecase) DeleteUser(ctx context.Context, id int64) error {
+	ret := _m.Called(ctx, id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DeleteUser")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, int64) error); ok {
+		r0 = rf(ctx, id)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // CreateUser provides a mock function with given fields: ctx, _a1
 func (_m *APIUsecase) CreateUser(ctx context.Context, _a1 *request.CreateUpdateUserReq) error {
 	ret := _m.Called(ctx, _a1)

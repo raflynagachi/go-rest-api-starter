@@ -2,13 +2,16 @@ package usecase
 
 import (
 	"context"
+	"time"
 
+	"github.com/guregu/null/v5"
 	"github.com/pkg/errors"
 	"github.com/raflynagachi/go-rest-api-starter/internal/apperror"
 	req "github.com/raflynagachi/go-rest-api-starter/internal/dto/web/request"
 	resp "github.com/raflynagachi/go-rest-api-starter/internal/dto/web/response"
 	"github.com/raflynagachi/go-rest-api-starter/internal/model"
 	paginationutil "github.com/raflynagachi/go-rest-api-starter/internal/util/pagination"
+	"github.com/raflynagachi/go-rest-api-starter/pkg/auth"
 	"github.com/raflynagachi/go-rest-api-starter/pkg/http/response"
 	"github.com/raflynagachi/go-rest-api-starter/pkg/validator"
 )
@@ -110,6 +113,48 @@ func (u *APIUsecaseImpl) CreateUser(ctx context.Context, userReq *req.CreateUpda
 	_, err = u.repo.InsertUser(ctx, tx, user)
 	if err != nil {
 		return errors.Wrap(response.WrapErrInternalServer(err), "APIUsecase.CreateUser.InsertUser")
+	}
+
+	return nil
+}
+
+func (u *APIUsecaseImpl) DeleteUser(ctx context.Context, id int64) error {
+	_, err := u.repo.GetUserByID(ctx, id)
+	if err != nil {
+		if errors.Is(err, apperror.ErrNotFound) {
+			return errors.Wrap(response.WrapErrNotFound(err), "APIUsecase.DeleteUser.GetUserByID")
+		}
+		return errors.Wrap(response.WrapErrInternalServer(err), "APIUsecase.DeleteUser.GetUserByID")
+	}
+
+	// TODO: change to email from JWT once auth is fully wired
+	deletedBy := auth.GetEmail(ctx)
+
+	user := &model.User{
+		ID: id,
+		Deleted: model.Deleted{
+			DeletedAt: null.TimeFrom(time.Now()),
+			DeletedBy: null.StringFrom(deletedBy),
+		},
+	}
+
+	tx, err := u.repo.TxBegin()
+	if err != nil {
+		return errors.Wrap(response.WrapErrInternalServer(err), "APIUsecase.DeleteUser.TxBegin")
+	}
+	defer func() {
+		if txErr := u.repo.TxEnd(tx, err); txErr != nil {
+			txErr = errors.Wrap(txErr, "APIUsecase.DeleteUser.TxEnd")
+			u.appLogger.ErrorContext(ctx, txErr.Error())
+		}
+	}()
+
+	err = u.repo.DeleteUser(ctx, tx, user)
+	if err != nil {
+		if errors.Is(err, apperror.ErrNotFound) {
+			return errors.Wrap(response.WrapErrNotFound(err), "APIUsecase.DeleteUser.DeleteUser")
+		}
+		return errors.Wrap(response.WrapErrInternalServer(err), "APIUsecase.DeleteUser.DeleteUser")
 	}
 
 	return nil

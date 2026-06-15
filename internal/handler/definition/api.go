@@ -11,4 +11,5 @@ type APIHandler interface {
 	GetUserByID(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	CreateUser(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	UpdateUser(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
+	DeleteUser(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 }

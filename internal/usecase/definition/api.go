@@ -12,4 +12,5 @@ type APIUsecase interface {
 	GetUserByID(ctx context.Context, id int64) (*resp.UserResponse, error)
 	CreateUser(ctx context.Context, request *req.CreateUpdateUserReq) error
 	UpdateUser(ctx context.Context, id int64, request *req.CreateUpdateUserReq) error
+	DeleteUser(ctx context.Context, id int64) error
 }

@@ -24,13 +24,13 @@ func TestFilterUser(t *testing.T) {
 			filter: req.UserFilter{
 				Email: mockEmail,
 			},
-			wantClause: " WHERE email LIKE '%'||?||'%'",
+			wantClause: " WHERE deleted_at IS NULL AND email LIKE '%'||?||'%'",
 			wantArgs:   []interface{}{mockEmail},
 		},
 		{
 			name:       "success without filter",
 			filter:     req.UserFilter{},
-			wantClause: "",
+			wantClause: " WHERE deleted_at IS NULL",
 			wantArgs:   nil,
 		},
 		{
@@ -39,7 +39,7 @@ func TestFilterUser(t *testing.T) {
 				Email:     mockEmail,
 				CreatedAt: mockTime,
 			},
-			wantClause: " WHERE email LIKE '%'||?||'%' AND created_at >= ?",
+			wantClause: " WHERE deleted_at IS NULL AND email LIKE '%'||?||'%' AND created_at >= ?",
 			wantArgs:   []interface{}{mockEmail, mockTime},
 		},
 	}

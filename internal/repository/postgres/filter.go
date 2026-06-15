@@ -7,7 +7,7 @@ import (
 )
 
 func filterUser(filter req.UserFilter) (string, []interface{}) {
-	values := []string{}
+	values := []string{"deleted_at IS NULL"}
 	args := []interface{}{}
 
 	if filter.Email != "" {
@@ -20,9 +20,5 @@ func filterUser(filter req.UserFilter) (string, []interface{}) {
 		args = append(args, filter.CreatedAt)
 	}
 
-	var whereClause string
-	if len(values) > 0 {
-		whereClause = " WHERE " + strings.Join(values, " AND ")
-	}
-	return whereClause, args
+	return " WHERE " + strings.Join(values, " AND "), args
 }

@@ -62,7 +62,7 @@ func (r *PostgresRepo) GetUserByID(ctx context.Context, id int64) (*model.User, 
 			id, email, created_at, created_by,
 			updated_at, updated_by, deleted_at, deleted_by
 		FROM users
-		WHERE id = ?
+		WHERE id = ? AND deleted_at IS NULL
 	`
 
 	query = r.DB.Rebind(query)
@@ -111,7 +111,7 @@ func (r *PostgresRepo) UpdateUser(ctx context.Context, tx *sqlx.Tx, user *model.
 		WHERE id = :id
 	`
 
-	_, err := r.DB.NamedExecContext(ctx, query, user)
+	_, err := tx.NamedExecContext(ctx, query, user)
 	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok {
 			if pqErr.Code == database.ERR_PQ_CODE_DUPLICATE {

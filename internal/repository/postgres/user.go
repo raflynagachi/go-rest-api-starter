@@ -79,17 +79,40 @@ func (r *PostgresRepo) GetUserByID(ctx context.Context, id int64) (*model.User, 
 	return user, nil
 }
 
+func (r *PostgresRepo) GetUserByEmail(ctx context.Context, email string) (*model.User, error) {
+	query := `
+		SELECT
+			id, email, password_hash, created_at, created_by,
+			updated_at, updated_by, deleted_at, deleted_by
+		FROM users
+		WHERE email = ? AND deleted_at IS NULL
+	`
+
+	query = r.DB.Rebind(query)
+
+	user := &model.User{}
+	err := r.DB.GetContext(ctx, user, query, email)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, errors.Wrap(apperror.ErrNotFound, "PostgresRepo.GetUserByEmail.GetContext")
+		}
+		return nil, errors.Wrap(err, "PostgresRepo.GetUserByEmail.GetContext")
+	}
+
+	return user, nil
+}
+
 func (r *PostgresRepo) InsertUser(ctx context.Context, tx *sqlx.Tx, user *model.User) (int64, error) {
 	query := `
-		INSERT INTO users (email, created_at, created_by)
-		VALUES (?, ?, ?)
+		INSERT INTO users (email, password_hash, created_at, created_by)
+		VALUES (?, ?, ?, ?)
 		RETURNING id
 	`
 
 	query = r.DB.Rebind(query)
 
 	var lastID int64
-	err := tx.GetContext(ctx, &lastID, query, user.Email, user.Created.CreatedAt, user.Created.CreatedBy)
+	err := tx.GetContext(ctx, &lastID, query, user.Email, user.PasswordHash, user.Created.CreatedAt, user.Created.CreatedBy)
 	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok {
 			if pqErr.Code == database.ERR_PQ_CODE_DUPLICATE {

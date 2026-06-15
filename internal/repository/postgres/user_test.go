@@ -289,7 +289,7 @@ func TestPostgresRepo_InsertUser(t *testing.T) {
 				user: mockUser,
 			},
 			setup: func() {
-				mockSql.ExpectQuery("INSERT").WithArgs(mockUser.Email, mockUser.CreatedAt, mockUser.CreatedBy).
+				mockSql.ExpectQuery("INSERT").WithArgs(mockUser.Email, mockUser.PasswordHash, mockUser.CreatedAt, mockUser.CreatedBy).
 					WillReturnRows(
 						mockSql.NewRows([]string{"id"}).
 							AddRow(mockUser.ID))
@@ -305,7 +305,7 @@ func TestPostgresRepo_InsertUser(t *testing.T) {
 				user: mockUser,
 			},
 			setup: func() {
-				mockSql.ExpectQuery("INSERT").WithArgs(mockUser.Email, mockUser.CreatedAt, mockUser.CreatedBy).
+				mockSql.ExpectQuery("INSERT").WithArgs(mockUser.Email, mockUser.PasswordHash, mockUser.CreatedAt, mockUser.CreatedBy).
 					WillReturnError(testutil.MockErrDuplicate)
 			},
 			wantErr: true,
@@ -318,7 +318,7 @@ func TestPostgresRepo_InsertUser(t *testing.T) {
 				user: mockUser,
 			},
 			setup: func() {
-				mockSql.ExpectQuery("INSERT").WithArgs(mockUser.Email, mockUser.CreatedAt, mockUser.CreatedBy).
+				mockSql.ExpectQuery("INSERT").WithArgs(mockUser.Email, mockUser.PasswordHash, mockUser.CreatedAt, mockUser.CreatedBy).
 					WillReturnError(sql.ErrConnDone)
 			},
 			wantErr: true,

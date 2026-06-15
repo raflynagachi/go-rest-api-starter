@@ -239,14 +239,12 @@ func (u *APIUsecaseImpl) UpdateUser(ctx context.Context, id int64, userReq *req.
 		return errors.Wrap(response.WrapErrInternalServer(err), "APIUsecase.UpdateUser.GetUserByID")
 	}
 
-	// TODO: implement JWT
-
 	user := &model.User{
 		ID:    id,
 		Email: userReq.Email,
-		Created: model.Created{
-			CreatedAt: getTimeNow,
-			CreatedBy: userReq.Email, // TODO: change to email in JWT
+		Updated: model.Updated{
+			UpdatedAt: null.TimeFrom(getTimeNow()),
+			UpdatedBy: null.StringFrom(auth.GetEmail(ctx)),
 		},
 	}
 

@@ -19,6 +19,24 @@ type SQLRepo struct {
 	mock.Mock
 }
 
+// DeleteUser provides a mock function with given fields: ctx, tx, user
+func (_m *SQLRepo) DeleteUser(ctx context.Context, tx *sqlx.Tx, user *model.User) error {
+	ret := _m.Called(ctx, tx, user)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DeleteUser")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *sqlx.Tx, *model.User) error); ok {
+		r0 = rf(ctx, tx, user)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // CountUser provides a mock function with given fields: ctx, filter
 func (_m *SQLRepo) CountUser(ctx context.Context, filter request.UserFilter) (int64, error) {
 	ret := _m.Called(ctx, filter)

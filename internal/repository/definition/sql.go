@@ -16,6 +16,7 @@ type SQLRepo interface {
 	GetUserByID(ctx context.Context, id int64) (*model.User, error)
 	InsertUser(ctx context.Context, tx *sqlx.Tx, user *model.User) (int64, error)
 	UpdateUser(ctx context.Context, tx *sqlx.Tx, user *model.User) error
+	DeleteUser(ctx context.Context, tx *sqlx.Tx, user *model.User) error
 }
 
 type Transaction interface {

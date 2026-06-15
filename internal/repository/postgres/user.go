@@ -102,6 +102,30 @@ func (r *PostgresRepo) InsertUser(ctx context.Context, tx *sqlx.Tx, user *model.
 	return lastID, nil
 }
 
+func (r *PostgresRepo) DeleteUser(ctx context.Context, tx *sqlx.Tx, user *model.User) error {
+	query := `
+		UPDATE users SET
+			deleted_at = :deleted_at,
+			deleted_by = :deleted_by
+		WHERE id = :id AND deleted_at IS NULL
+	`
+
+	result, err := tx.NamedExecContext(ctx, query, user)
+	if err != nil {
+		return errors.Wrap(err, "PostgresRepo.DeleteUser.NamedExecContext")
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return errors.Wrap(err, "PostgresRepo.DeleteUser.RowsAffected")
+	}
+	if rows == 0 {
+		return errors.Wrap(apperror.ErrNotFound, "PostgresRepo.DeleteUser.RowsAffected")
+	}
+
+	return nil
+}
+
 func (r *PostgresRepo) UpdateUser(ctx context.Context, tx *sqlx.Tx, user *model.User) error {
 	query := `
 		UPDATE users SET

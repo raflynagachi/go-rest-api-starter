@@ -32,7 +32,7 @@ func (u *APIUsecaseImpl) Register(ctx context.Context, userReq *req.RegisterReq)
 		Email:        userReq.Email,
 		PasswordHash: string(hash),
 		Created: model.Created{
-			CreatedAt: getTimeNow,
+			CreatedAt: getTimeNow(),
 			CreatedBy: userReq.Email,
 		},
 	}
@@ -157,13 +157,11 @@ func (u *APIUsecaseImpl) CreateUser(ctx context.Context, userReq *req.CreateUpda
 		return errors.Wrap(response.WrapErrBadRequest(err), "APIUsecase.CreateUser.Validate")
 	}
 
-	// TODO: implement JWT
-
 	user := &model.User{
 		Email: userReq.Email,
 		Created: model.Created{
-			CreatedAt: getTimeNow,
-			CreatedBy: userReq.Email, // TODO: change to email in JWT
+			CreatedAt: getTimeNow(),
+			CreatedBy: auth.GetEmail(ctx),
 		},
 	}
 
@@ -195,13 +193,12 @@ func (u *APIUsecaseImpl) DeleteUser(ctx context.Context, id int64) error {
 		return errors.Wrap(response.WrapErrInternalServer(err), "APIUsecase.DeleteUser.GetUserByID")
 	}
 
-	// TODO: change to email from JWT once auth is fully wired
 	deletedBy := auth.GetEmail(ctx)
 
 	user := &model.User{
 		ID: id,
 		Deleted: model.Deleted{
-			DeletedAt: null.TimeFrom(time.Now()),
+			DeletedAt: null.TimeFrom(getTimeNow()),
 			DeletedBy: null.StringFrom(deletedBy),
 		},
 	}

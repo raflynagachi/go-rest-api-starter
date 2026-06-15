@@ -24,5 +24,5 @@ func New(cfg *config.Config, log *logger.Logger, sqlRepo repo.SQLRepo) uc.APIUse
 }
 
 var (
-	getTimeNow = time.Now()
+	getTimeNow = time.Now
 )

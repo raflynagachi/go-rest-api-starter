@@ -14,8 +14,180 @@ import (
 	randomutil "github.com/raflynagachi/go-rest-api-starter/internal/util/random"
 	"github.com/raflynagachi/go-rest-api-starter/internal/util/testutil"
 	"github.com/raflynagachi/go-rest-api-starter/pkg/http/response"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
+
+func TestAPIHandlerImpl_Register(t *testing.T) {
+	type args struct {
+		request *http.Request
+	}
+
+	tests := []struct {
+		name     string
+		args     func(t *testing.T) args
+		wantCode int
+	}{
+		{
+			name: "success register",
+			args: func(t *testing.T) args {
+				reqModel := &req.RegisterReq{Email: "user@example.com", Password: "password123"}
+				body, err := json.Marshal(reqModel)
+				assert.NoError(t, err)
+
+				r, err := http.NewRequest(http.MethodPost, "/auth/register", bytes.NewBuffer(body))
+				assert.NoError(t, err)
+
+				mockUc.On("Register", context.Background(), reqModel).Once().Return(nil)
+				return args{request: r}
+			},
+			wantCode: http.StatusOK,
+		},
+		{
+			name: "failed due to json decode error",
+			args: func(t *testing.T) args {
+				r, err := http.NewRequest(http.MethodPost, "/auth/register", bytes.NewBuffer([]byte("invalid")))
+				assert.NoError(t, err)
+				return args{request: r}
+			},
+			wantCode: http.StatusBadRequest,
+		},
+		{
+			name: "failed due to validation error",
+			args: func(t *testing.T) args {
+				reqModel := &req.RegisterReq{Email: "user@example.com", Password: "password123"}
+				body, err := json.Marshal(reqModel)
+				assert.NoError(t, err)
+
+				r, err := http.NewRequest(http.MethodPost, "/auth/register", bytes.NewBuffer(body))
+				assert.NoError(t, err)
+
+				mockUc.On("Register", context.Background(), reqModel).Once().Return(response.WrapErrBadRequest(testutil.MockErr))
+				return args{request: r}
+			},
+			wantCode: http.StatusBadRequest,
+		},
+		{
+			name: "failed due to email conflict",
+			args: func(t *testing.T) args {
+				reqModel := &req.RegisterReq{Email: "user@example.com", Password: "password123"}
+				body, err := json.Marshal(reqModel)
+				assert.NoError(t, err)
+
+				r, err := http.NewRequest(http.MethodPost, "/auth/register", bytes.NewBuffer(body))
+				assert.NoError(t, err)
+
+				mockUc.On("Register", context.Background(), reqModel).Once().Return(response.WrapErrConflict(testutil.MockErr))
+				return args{request: r}
+			},
+			wantCode: http.StatusConflict,
+		},
+		{
+			name: "failed due to internal server error",
+			args: func(t *testing.T) args {
+				reqModel := &req.RegisterReq{Email: "user@example.com", Password: "password123"}
+				body, err := json.Marshal(reqModel)
+				assert.NoError(t, err)
+
+				r, err := http.NewRequest(http.MethodPost, "/auth/register", bytes.NewBuffer(body))
+				assert.NoError(t, err)
+
+				mockUc.On("Register", context.Background(), reqModel).Once().Return(response.WrapErrInternalServer(testutil.MockErr))
+				return args{request: r}
+			},
+			wantCode: http.StatusInternalServerError,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tArgs := tt.args(t)
+			w := httptest.NewRecorder()
+			mockHandler.Router.ServeHTTP(w, tArgs.request)
+			if w.Result().StatusCode != tt.wantCode {
+				t.Errorf("APIHandler.Register() code = %v, wantCode %v", w.Result().StatusCode, tt.wantCode)
+			}
+		})
+	}
+}
+
+func TestAPIHandlerImpl_Login(t *testing.T) {
+	mockLoginResp := &resp.LoginResponse{Token: "some.jwt.token"}
+
+	type args struct {
+		request *http.Request
+	}
+
+	tests := []struct {
+		name     string
+		args     func(t *testing.T) args
+		wantCode int
+	}{
+		{
+			name: "success login",
+			args: func(t *testing.T) args {
+				reqModel := &req.LoginReq{Email: "user@example.com", Password: "password123"}
+				body, err := json.Marshal(reqModel)
+				assert.NoError(t, err)
+
+				r, err := http.NewRequest(http.MethodPost, "/auth/login", bytes.NewBuffer(body))
+				assert.NoError(t, err)
+
+				mockUc.On("Login", context.Background(), reqModel).Once().Return(mockLoginResp, nil)
+				return args{request: r}
+			},
+			wantCode: http.StatusOK,
+		},
+		{
+			name: "failed due to json decode error",
+			args: func(t *testing.T) args {
+				r, err := http.NewRequest(http.MethodPost, "/auth/login", bytes.NewBuffer([]byte("invalid")))
+				assert.NoError(t, err)
+				return args{request: r}
+			},
+			wantCode: http.StatusBadRequest,
+		},
+		{
+			name: "failed due to wrong credentials",
+			args: func(t *testing.T) args {
+				reqModel := &req.LoginReq{Email: "user@example.com", Password: "password123"}
+				body, err := json.Marshal(reqModel)
+				assert.NoError(t, err)
+
+				r, err := http.NewRequest(http.MethodPost, "/auth/login", bytes.NewBuffer(body))
+				assert.NoError(t, err)
+
+				mockUc.On("Login", context.Background(), reqModel).Once().Return(nil, response.WrapErrUnauthorized(testutil.MockErr))
+				return args{request: r}
+			},
+			wantCode: http.StatusUnauthorized,
+		},
+		{
+			name: "failed due to internal server error",
+			args: func(t *testing.T) args {
+				reqModel := &req.LoginReq{Email: "user@example.com", Password: "password123"}
+				body, err := json.Marshal(reqModel)
+				assert.NoError(t, err)
+
+				r, err := http.NewRequest(http.MethodPost, "/auth/login", bytes.NewBuffer(body))
+				assert.NoError(t, err)
+
+				mockUc.On("Login", context.Background(), reqModel).Once().Return(nil, response.WrapErrInternalServer(testutil.MockErr))
+				return args{request: r}
+			},
+			wantCode: http.StatusInternalServerError,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tArgs := tt.args(t)
+			w := httptest.NewRecorder()
+			mockHandler.Router.ServeHTTP(w, tArgs.request)
+			if w.Result().StatusCode != tt.wantCode {
+				t.Errorf("APIHandler.Login() code = %v, wantCode %v", w.Result().StatusCode, tt.wantCode)
+			}
+		})
+	}
+}
 
 func TestAPIHandlerImpl_GetUser(t *testing.T) {
 	mockUser := randomutil.RandomUser()

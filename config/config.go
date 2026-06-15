@@ -13,6 +13,7 @@ type Config struct {
 	Databases map[string]*Database `json:"databases"`
 	JwtKey    string               `json:"jwt_key"`
 	Redis     Redis                `json:"redis"`
+	Services  ServiceEndpoints     `json:"services"`
 }
 
 var (

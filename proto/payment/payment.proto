@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package payment;
+
+option go_package = "github.com/raflynagachi/go-rest-api-starter/gen/payment;paymentpb";
+
+service PaymentService {
+  // Charge creates a payment transaction and returns its ID.
+  rpc Charge(ChargeRequest) returns (ChargeResponse);
+  // GetTransaction fetches a transaction by ID.
+  rpc GetTransaction(GetTransactionRequest) returns (GetTransactionResponse);
+}
+
+message ChargeRequest {
+  int64  order_id = 1;
+  double amount   = 2;
+  string method   = 3;
+}
+
+message ChargeResponse {
+  int64  transaction_id = 1;
+  string status         = 2;
+}
+
+message GetTransactionRequest {
+  int64 id = 1;
+}
+
+message GetTransactionResponse {
+  int64  id       = 1;
+  int64  order_id = 2;
+  double amount   = 3;
+  string status   = 4;
+  string method   = 5;
+}

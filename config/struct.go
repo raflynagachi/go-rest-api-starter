@@ -17,3 +17,10 @@ type Redis struct {
 	Port     int    `json:"port"`
 	Password string `json:"password"`
 }
+
+type ServiceEndpoints struct {
+	NatsURL      string `json:"nats_url"`
+	OrderURL     string `json:"order_url"`
+	PaymentURL   string `json:"payment_url"`
+	InventoryURL string `json:"inventory_url"`
+}

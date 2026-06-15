@@ -1,8 +1,9 @@
 package config
 
-const (
-	ServiceName = "go-rest-api-starter"
+// ServiceName is overridden by each cmd/*/main.go before calling LoadConfig.
+var ServiceName = "go-rest-api-starter"
 
+const (
 	EnvKey      = "env"
 	Development = "development"
 	Staging     = "staging"

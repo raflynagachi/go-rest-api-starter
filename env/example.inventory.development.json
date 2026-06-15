@@ -1,0 +1,16 @@
+{
+  "app": {
+    "name": "inventory",
+    "port": 8083
+  },
+  "databases": {
+    "inventory": {
+      "name": "SECRET",
+      "user": "SECRET",
+      "password": "SECRET",
+      "host": "SECRET",
+      "port": 5432
+    }
+  },
+  "jwt_key": "SECRET"
+}

@@ -1,0 +1,19 @@
+{
+  "app": {
+    "name": "payment",
+    "port": 8082
+  },
+  "databases": {
+    "payment": {
+      "name": "SECRET",
+      "user": "SECRET",
+      "password": "SECRET",
+      "host": "SECRET",
+      "port": 5432
+    }
+  },
+  "jwt_key": "SECRET",
+  "services": {
+    "nats_url": "nats://localhost:4222"
+  }
+}

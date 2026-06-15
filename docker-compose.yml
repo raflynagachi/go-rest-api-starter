@@ -15,6 +15,12 @@ services:
       timeout: 5s
       retries: 5
 
+  nats:
+    image: nats:latest
+    ports:
+      - "4222:4222"
+
+  # ── Migrations ────────────────────────────────────────────────────────────
   migrate:
     image: migrate/migrate:v4.17.1
     depends_on:
@@ -26,6 +32,78 @@ services:
       - "-path=/migrations/"
       - "-database=postgres://postgres:postgres@postgres:5432/go-rest-api-starter?sslmode=disable"
       - "up"
+
+  migrate-inventory:
+    image: migrate/migrate:v4.17.1
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./migrations/inventory:/migrations
+    command:
+      - "-path=/migrations/"
+      - "-database=postgres://postgres:postgres@postgres:5432/go-rest-api-starter?sslmode=disable"
+      - "up"
+
+  migrate-payment:
+    image: migrate/migrate:v4.17.1
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./migrations/payment:/migrations
+    command:
+      - "-path=/migrations/"
+      - "-database=postgres://postgres:postgres@postgres:5432/go-rest-api-starter?sslmode=disable"
+      - "up"
+
+  migrate-order:
+    image: migrate/migrate:v4.17.1
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./migrations/order:/migrations
+    command:
+      - "-path=/migrations/"
+      - "-database=postgres://postgres:postgres@postgres:5432/go-rest-api-starter?sslmode=disable"
+      - "up"
+
+  # ── Services ──────────────────────────────────────────────────────────────
+  inventory:
+    build: .
+    command: ["/app/bin/inventory"]
+    ports:
+      - "8083:8083"
+    environment:
+      env: production
+    depends_on:
+      - migrate-inventory
+      - nats
+
+  payment:
+    build: .
+    command: ["/app/bin/payment"]
+    ports:
+      - "8082:8082"
+    environment:
+      env: production
+    depends_on:
+      - migrate-payment
+      - nats
+
+  order:
+    build: .
+    command: ["/app/bin/order"]
+    ports:
+      - "8081:8081"
+    environment:
+      env: production
+    depends_on:
+      - migrate-order
+      - nats
+      - inventory
+      - payment
 
 volumes:
   postgres_data:

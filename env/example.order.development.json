@@ -1,0 +1,21 @@
+{
+  "app": {
+    "name": "order",
+    "port": 8081
+  },
+  "databases": {
+    "order": {
+      "name": "SECRET",
+      "user": "SECRET",
+      "password": "SECRET",
+      "host": "SECRET",
+      "port": 5432
+    }
+  },
+  "jwt_key": "SECRET",
+  "services": {
+    "nats_url": "nats://localhost:4222",
+    "inventory_url": "http://localhost:8083",
+    "payment_url": "http://localhost:8082"
+  }
+}

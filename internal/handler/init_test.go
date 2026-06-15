@@ -19,7 +19,7 @@ var (
 	cfg         = &config.Config{JwtKey: testutil.TestJWTSecret}
 	mockUc      = new(mocks.APIUsecase)
 	mockLogger  = logger.NewLogger(logger.WithEnv("test"))
-	mockHandler = router.New(cfg, mockLogger, New(mockUc, mockLogger))
+	mockHandler = router.New(cfg, mockLogger, New(mockUc, mockLogger), nil)
 	testToken   = testutil.GenerateTestToken("test@example.com")
 )
 

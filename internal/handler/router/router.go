@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"sync"
 
+	"github.com/jmoiron/sqlx"
 	"github.com/julienschmidt/httprouter"
 	"github.com/raflynagachi/go-rest-api-starter/config"
 	hn "github.com/raflynagachi/go-rest-api-starter/internal/handler/definition"
@@ -22,8 +23,8 @@ type Router struct {
 }
 
 // New creates a new Router instance
-func New(cfg *config.Config, log *logger.Logger, hn hn.APIHandler) *Router {
-	router := newRouter(cfg, log, hn)
+func New(cfg *config.Config, log *logger.Logger, hn hn.APIHandler, db *sqlx.DB) *Router {
+	router := newRouter(cfg, log, hn, db)
 	return &Router{
 		Cfg:       cfg,
 		appLogger: log,

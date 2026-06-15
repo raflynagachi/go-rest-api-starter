@@ -36,7 +36,7 @@ func main() {
 	usecase := uc.New(cfg, appLogger, repo)
 	handler := hn.New(usecase, appLogger)
 
-	r := router.New(cfg, appLogger, handler)
+	r := router.New(cfg, appLogger, handler, db)
 
 	serverErr := make(chan error, 1)
 	go func() {
